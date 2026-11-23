@@ -1425,11 +1425,7 @@
                 <div id="import-feedback" style="font-size:0.70rem; color:var(--green); font-weight:600;"></div>
             </div>
 
-            <div class="card-box" id="p10-channel-goals-card">
-                <div class="box-header">
-                    <div class="box-title"><i class="fa-solid fa-bullseye"></i> Metas & Forecast por Canal — Mês Vigente (<span id="p10-chgoals-mes-lbl">Novembro/26</span>)</div>
-                    <div class="filter-bar" id="p10-chgoals-controls"></div>
-                </div>
+            
                 <div class="table-wrap" id="p10-chgoals-table" style="box-shadow:none; border:none; width:100%;"></div>
             </div>
 
@@ -1446,10 +1442,10 @@
                     <div class="box-header">
                         <div class="box-title"><i class="fa-solid fa-sitemap"></i> Capacidade Máxima de Vagas por Líder</div>
                         <div class="filter-bar" id="p10-capacity-controls">
-                            <button class="pill-btn" onclick="setCapacityRegion('CO', this)">CO</button>
-                            <button class="pill-btn" onclick="setCapacityRegion('RJ', this)">RJ</button>
-                            <button class="pill-btn" onclick="setCapacityRegion('RS', this)">RS</button>
-                            <button class="pill-btn active" onclick="setCapacityRegion('SP', this)">SP</button>
+                            <button class="pill-btn" onclick="setAdminRegion('CO')">CO</button>
+                            <button class="pill-btn" onclick="setAdminRegion('RJ')">RJ</button>
+                            <button class="pill-btn" onclick="setAdminRegion('RS')">RS</button>
+                            <button class="pill-btn active" onclick="setAdminRegion('SP')">SP</button>
                         </div>
                     </div>
                     <div class="table-wrap" id="p10-capacity-table" style="box-shadow:none; border:none; width:100%;">
@@ -1467,7 +1463,7 @@
                     <div style="background:#F1F5F9; border:1px solid #CBD5E1; border-radius:5px; padding:6px 8px; display:flex; flex-direction:column; gap:5px;">
                         <div class="filter-bar">
                             <input type="text" id="new-ag-nome" placeholder="Nome Exato BI" style="min-width:130px; flex:1.5;">
-                            <select id="new-ag-reg" onchange="setAgentsCrudRegion(this.value)" style="width:52px;"><option value="CO">CO</option><option value="RJ">RJ</option><option value="RS">RS</option><option value="SP" selected>SP</option></select>
+                            <select id="new-ag-reg" onchange="setAdminRegion(this.value)" style="width:52px;"><option value="CO">CO</option><option value="RJ">RJ</option><option value="RS">RS</option><option value="SP" selected>SP</option></select>
                             <input type="text" id="new-ag-uni" placeholder="Unidade (ex: GRS)" style="width:94px;">
                             <select id="new-ag-canal" onchange="if(this.value==='Bko' && !document.getElementById('new-ag-lider').value) document.getElementById('new-ag-lider').value='BRENNA MOURA';" style="width:92px;"><option value="Lojas">Lojas</option><option value="PaP">PaP</option><option value="Inside Sales">Inside Sales</option><option value="Bko">Bko</option></select>
                             <input type="text" id="new-ag-lider" placeholder="Líder" style="width:105px;">
@@ -1497,7 +1493,7 @@
                         <div class="filter-bar">
                             <input type="text" id="new-aa-fantasia" placeholder="Nome Fantasia" style="min-width:95px; flex:1;">
                             <input type="text" id="new-aa-raz" placeholder="Razão Social BI" style="min-width:125px; flex:1.3;">
-                            <select id="new-aa-reg" onchange="setAaCrudRegion(this.value)" style="width:52px;"><option value="CO">CO</option><option value="RJ">RJ</option><option value="RS">RS</option><option value="SP" selected>SP</option></select>
+                            <select id="new-aa-reg" onchange="setAdminRegion(this.value)" style="width:52px;"><option value="CO">CO</option><option value="RJ">RJ</option><option value="RS">RS</option><option value="SP" selected>SP</option></select>
                         </div>
                         <div class="filter-bar" style="justify-content:space-between;">
                             <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
@@ -2821,11 +2817,6 @@
     function setRegion(reg) {
         ensureRegionSkeletons();
         currentRegion = reg;
-        channelGoalsRegion = reg;
-        prodRulesEditRegion = reg;
-        agentsCrudRegion = reg;
-        aaCrudRegion = reg;
-        currentCapacityRegion = reg;
         document.querySelectorAll('#p10-capacity-controls .pill-btn').forEach(b => {
             b.classList.toggle('active', b.getAttribute('onclick') === `setCapacityRegion('${reg}', this)`);
         });
@@ -5561,107 +5552,21 @@
         document.getElementById('p8-bko-rk').innerHTML = hBko;
     }
 
-    let channelGoalsRegion = 'SP';
-
-    function setChannelGoalsRegion(reg) {
-        channelGoalsRegion = reg;
-        renderChannelGoalsEditor();
-    }
-
-    function renderChannelGoalsEditor() {
-        const ctrlEl = document.getElementById('p10-chgoals-controls');
-        const tblEl = document.getElementById('p10-chgoals-table');
-        const mesLbl = document.getElementById('p10-chgoals-mes-lbl');
-        if (!ctrlEl || !tblEl) return;
-        if (mesLbl) mesLbl.textContent = STATE.config.mesVigente || 'Novembro/26';
-
-        const reg = channelGoalsRegion || currentRegion || 'SP';
-        ensureRegionSkeletons();
-        const hist = STATE.historico[reg];
-        const mNov = hist.metasNov || { vendas: {}, fcVendas: {}, altas: {}, fcAltas: {} };
-        const blChs = ['Inside Sales', 'Digital', 'Lojas', 'PaP', 'AA'];
-
-        ctrlEl.innerHTML = `
-            <span style="font-size:0.65rem; color:var(--text-muted); font-weight:500;">Regional:</span>
-            ${ALL_REGIONS.map(r => `<button class="pill-btn ${reg === r ? 'active' : ''}" onclick="setChannelGoalsRegion('${r}')">${r}</button>`).join('')}
-        `;
-
-        let totMV = 0, totFV = 0, totMA = 0, totFA = 0;
-        let h = `<table id="p10-chgoals-tbl">
-            <thead>
-                <tr>
-                    <th rowspan="2" class="left grp-sep" style="background:#DCE7F5; color:var(--evo-navy);">Canal (${reg})</th>
-                    <th colspan="3" class="th-vendas-grp grp-sep">VENDAS BANDA LARGA</th>
-                    <th colspan="3" class="th-altas-grp">ALTAS BANDA LARGA</th>
-                </tr>
-                <tr>
-                    <th class="th-vendas-sub">Meta Vendas</th>
-                    <th class="th-vendas-sub">FC Vendas</th>
-                    <th class="th-vendas-sub grp-sep">Meta Dia Vnd</th>
-                    <th class="th-altas-sub">Meta Altas</th>
-                    <th class="th-altas-sub">FC Altas</th>
-                    <th class="th-altas-sub">Meta Dia Alt</th>
-                </tr>
-            </thead>
-            <tbody>`;
-
-        const duTot = Number(STATE.config.duTotal) || 21;
-        blChs.forEach(c => {
-            const mv = Number(mNov.vendas && mNov.vendas[c]) || 0;
-            const fv = Number(mNov.fcVendas && mNov.fcVendas[c]) || 0;
-            const ma = Number(mNov.altas && mNov.altas[c]) || 0;
-            const fa = Number(mNov.fcAltas && mNov.fcAltas[c]) || 0;
-            totMV += mv; totFV += fv; totMA += ma; totFA += fa;
-            const dispC = c === 'PaP' ? 'PaP Próprio' : c;
-            h += `<tr>
-                <td class="left grp-sep"><b>${dispC}</b></td>
-                <td><input type="number" step="0.01" min="0" value="${mv}" style="width:74px; text-align:center; font-weight:700; background:#FFFBEB; border:1px solid #C59B27;" onchange="updateChannelGoal('${reg}', 'vendas', '${c}', this.value)"></td>
-                <td><input type="number" step="0.01" min="0" value="${fv}" style="width:74px; text-align:center; font-weight:600;" onchange="updateChannelGoal('${reg}', 'fcVendas', '${c}', this.value)"></td>
-                <td class="grp-sep" style="color:var(--evo-blue); font-weight:600;">${(mv / duTot).toFixed(1).replace('.', ',')}</td>
-                <td><input type="number" step="0.01" min="0" value="${ma}" style="width:74px; text-align:center; font-weight:700; background:#FFFBEB; border:1px solid #C59B27;" onchange="updateChannelGoal('${reg}', 'altas', '${c}', this.value)"></td>
-                <td><input type="number" step="0.01" min="0" value="${fa}" style="width:74px; text-align:center; font-weight:600;" onchange="updateChannelGoal('${reg}', 'fcAltas', '${c}', this.value)"></td>
-                <td style="color:var(--evo-blue); font-weight:600;">${(ma / duTot).toFixed(1).replace('.', ',')}</td>
-            </tr>`;
-        });
-
-        h += `<tr class="row-total">
-            <td class="left grp-sep"><b>REGIONAL ${reg}</b></td>
-            <td><b>${totMV.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</b></td>
-            <td><b>${totFV.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</b></td>
-            <td class="grp-sep"><b>${(totMV / duTot).toFixed(1).replace('.', ',')}</b></td>
-            <td><b>${totMA.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</b></td>
-            <td><b>${totFA.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</b></td>
-            <td><b>${(totMA / duTot).toFixed(1).replace('.', ',')}</b></td>
-        </tr></tbody></table>`;
-        tblEl.innerHTML = h;
-    }
-
-    function updateChannelGoal(reg, field, ch, rawVal) {
-        if (!checkAdminPass()) { renderChannelGoalsEditor(); return; }
-        const num = Math.max(0, parseFloat(String(rawVal).replace(',', '.')) || 0);
-        const mNov = STATE.historico[reg].metasNov;
-        const prevMeta = Number(mNov[field][ch]) || 0;
-        mNov[field][ch] = num;
-        // Se FC estava igual à Meta anterior, acompanha automaticamente
-        if (field === 'vendas' && (Number(mNov.fcVendas[ch]) || 0) === prevMeta) mNov.fcVendas[ch] = num;
-        if (field === 'altas' && (Number(mNov.fcAltas[ch]) || 0) === prevMeta) mNov.fcAltas[ch] = num;
-        if (ch === 'AA' && STATE.config && STATE.config.kelvinMeta && STATE.config.kelvinMeta[reg]) {
-            STATE.config.kelvinMeta[reg].metaAltas = Number(mNov.fcAltas['AA']) || Number(mNov.altas['AA']) || 0;
-        }
-        stampLastUpdate();
-        saveLocalStateCache();
-        renderAll();
-        pushCloudState(false);
-        const fb = document.getElementById('import-feedback');
-        if (fb) fb.textContent = `Meta de ${ch} (${reg}) atualizada e sincronizada na Nuvem!`;
-    }
-
-    let prodRulesEditRegion = 'SP';
-
-    function setProdRulesEditRegion(reg) {
-        prodRulesEditRegion = reg;
+    let adminRegion = 'SP';
+    
+    function setAdminRegion(reg) {
+        adminRegion = reg;
         renderProdRulesEditor();
+        renderAgentsCrudTable();
+        renderAaCrudTable();
+        renderCapacityTable();
     }
+
+    
+
+    
+
+    
 
     function renderProdRulesEditor() {
         const ctrlEl = document.getElementById('p10-prodrules-controls');
@@ -5669,13 +5574,10 @@
         if (!ctrlEl || !tblEl) return;
 
         const rulesAll = ensureProdRules();
-        const reg = prodRulesEditRegion || currentRegion || 'SP';
+        const reg = adminRegion || currentRegion || 'SP';
         const tiers = rulesAll[reg];
 
-        ctrlEl.innerHTML = `
-            <span style="font-size:0.65rem; color:var(--text-muted); font-weight:500;">Regional:</span>
-            ${ALL_REGIONS.map(r => `<button class="pill-btn ${reg === r ? 'active' : ''}" onclick="setProdRulesEditRegion('${r}')">${r}</button>`).join('')}
-        `;
+        ctrlEl.innerHTML = `<span style="font-size:0.65rem; color:var(--text-muted); font-weight:500;">Regional:</span>${ALL_REGIONS.map(r => `<button class="pill-btn ${reg === r ? 'active' : ''}" onclick="setAdminRegion('${r}')">${r}</button>`).join('')}`;
 
         let h = `<table>
             <thead>
@@ -5782,14 +5684,14 @@
     let agentsCrudRegion = 'SP';
     let aaCrudRegion = 'SP';
 
-    function setAgentsCrudRegion(reg) {
+    function setAdminRegion(reg) {
         agentsCrudRegion = reg;
         const selEl = document.getElementById('new-ag-reg');
         if (selEl) selEl.value = reg;
         renderAgentsCrudTable();
     }
 
-    function setAaCrudRegion(reg) {
+    function setAdminRegion(reg) {
         aaCrudRegion = reg;
         const selEl = document.getElementById('new-aa-reg');
         if (selEl) selEl.value = reg;
@@ -5801,13 +5703,13 @@
         const tblEl = document.getElementById('p10-agents-crud');
         if (!tblEl) return;
 
-        const agReg = agentsCrudRegion || currentRegion || 'SP';
+        const agReg = adminRegion || currentRegion || 'SP';
         if (ctrlEl) {
             ctrlEl.innerHTML = `
                 <span style="font-size:0.65rem; color:var(--text-muted); font-weight:500;">Regional:</span>
                 ${ALL_REGIONS.map(r => {
                     const cnt = STATE.agents.filter(a => a[2] === r && a[7] !== 'Inativo').length;
-                    return `<button class="pill-btn ${agReg === r ? 'active' : ''}" onclick="setAgentsCrudRegion('${r}')">${r} (${cnt})</button>`;
+                    return `<button class="pill-btn ${agReg === r ? 'active' : ''}" onclick="setAdminRegion('${r}')">${r} (${cnt})</button>`;
                 }).join('')}
             `;
         }
@@ -5869,14 +5771,14 @@
         const tblEl = document.getElementById('p10-aa-crud');
         if (!tblEl) return;
 
-        const aaReg = aaCrudRegion || currentRegion || 'SP';
+        const aaReg = adminRegion || currentRegion || 'SP';
         const aaMetas = STATE.config.aaMetas || {};
         const allKeys = Object.keys(aaMetas);
 
         if (ctrlEl) {
             ctrlEl.innerHTML = `
                 <span style="font-size:0.65rem; color:var(--text-muted); font-weight:500;">Metas Reg.:</span>
-                ${ALL_REGIONS.map(r => `<button class="pill-btn ${aaReg === r ? 'active' : ''}" onclick="setAaCrudRegion('${r}')">${r}</button>`).join('')}
+                ${ALL_REGIONS.map(r => `<button class="pill-btn ${aaReg === r ? 'active' : ''}" onclick="setAdminRegion('${r}')">${r}</button>`).join('')}
             `;
         }
         const selEl = document.getElementById('new-aa-reg');
