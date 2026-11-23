@@ -2343,6 +2343,8 @@
                 if (cached.movelUnitsHist) STATE.movelUnitsHist = cached.movelUnitsHist;
                 if (cached.movelSellerHist) STATE.movelSellerHist = cached.movelSellerHist;
                 if (cached.sellerHist) STATE.sellerHist = cached.sellerHist;
+                ensureRegionSkeletons();
+                mergeEmbeddedHistDefaults();
                 return true;
             }
         } catch (e) {}
@@ -2493,9 +2495,40 @@
     Chart.register(metaTickPlugin);
 
     const STATE = JSON.parse(document.getElementById('embedded-state').textContent);
+    const INITIAL_HISTORICO = JSON.parse(JSON.stringify(STATE.historico || {}));
+    const INITIAL_MOVEL_HIST = JSON.parse(JSON.stringify(STATE.movelHist || {}));
     const INITIAL_SELLER_HIST = JSON.parse(JSON.stringify(STATE.sellerHist || {}));
     const INITIAL_MOVEL_SELLER_HIST = JSON.parse(JSON.stringify(STATE.movelSellerHist || {}));
     const ALL_REGIONS = ['CO', 'RJ', 'RS', 'SP'];
+
+    function mergeEmbeddedHistDefaults() {
+        let updated = false;
+        ALL_REGIONS.forEach(r => {
+            const initH = INITIAL_HISTORICO[r];
+            if (initH && STATE.historico && STATE.historico[r]) {
+                const initSum = Array.isArray(initH.realVendasHist) ? initH.realVendasHist.reduce((a, b) => a + (Number(b) || 0), 0) : 0;
+                const curSum = Array.isArray(STATE.historico[r].realVendasHist) ? STATE.historico[r].realVendasHist.reduce((a, b) => a + (Number(b) || 0), 0) : 0;
+                if (initSum > 0 && curSum === 0) {
+                    STATE.historico[r].metasVendasHist = [...(initH.metasVendasHist || [])];
+                    STATE.historico[r].realVendasHist  = [...(initH.realVendasHist || [])];
+                    STATE.historico[r].metasAltasHist  = [...(initH.metasAltasHist || [])];
+                    STATE.historico[r].realAltasHist   = [...(initH.realAltasHist || [])];
+                    updated = true;
+                }
+            }
+            const initMv = INITIAL_MOVEL_HIST[r];
+            if (initMv && STATE.movelHist && STATE.movelHist[r]) {
+                const initMvSum = Array.isArray(initMv.realVendasHist) ? initMv.realVendasHist.reduce((a, b) => a + (Number(b) || 0), 0) : 0;
+                const curMvSum = Array.isArray(STATE.movelHist[r].realVendasHist) ? STATE.movelHist[r].realVendasHist.reduce((a, b) => a + (Number(b) || 0), 0) : 0;
+                if (initMvSum > 0 && curMvSum === 0) {
+                    STATE.movelHist[r].realVendasHist = [...(initMv.realVendasHist || [])];
+                    STATE.movelHist[r].realAltasHist  = [...(initMv.realAltasHist || [])];
+                    updated = true;
+                }
+            }
+        });
+        return updated;
+    }
     let currentRegion = 'SP';
 
     function detectRegionFromUnit(rawUnit, fallbackReg = 'SP') {
@@ -6470,7 +6503,17 @@
         if (!remoteStr || remoteStr === '00/00/0000 00:00:00') return false;
         const remoteTs = parseUpdateTimestamp(remoteStr);
         const localTs = parseUpdateTimestamp(STATE.config.lastUpdate || '');
-        if (remoteTs > 0 && localTs > 0 && remoteTs <= localTs) return false;
+        if (remoteTs > 0 && localTs > 0 && remoteTs <= localTs) {
+            const didMerge = mergeEmbeddedHistDefaults();
+            const remCoMissing = remote.historico && remote.historico.CO && Array.isArray(remote.historico.CO.realVendasHist) &&
+                remote.historico.CO.realVendasHist.reduce((a, b) => a + (Number(b) || 0), 0) === 0;
+            if (didMerge || remCoMissing) {
+                saveLocalStateCache();
+                if (dashboardBooted) renderAll();
+                setTimeout(() => { pushCloudState(false); }, 600);
+            }
+            return false;
+        }
         if (remoteStr === STATE.config.lastUpdate) return false;
 
         let needsCloudMigrationPush = false;
@@ -6532,23 +6575,11 @@
         if (remote.movel) STATE.movel = remote.movel;
         if (remote.unitsHist) STATE.unitsHist = remote.unitsHist;
         if (remote.movelHist) {
-            const preservedMvByReg = {};
-            ALL_REGIONS.forEach(r => {
-                if (STATE.movelHist && STATE.movelHist[r]) {
-                    preservedMvByReg[r] = {
-                        realVendasHist: STATE.movelHist[r].realVendasHist,
-                        realAltasHist: STATE.movelHist[r].realAltasHist
-                    };
-                }
-            });
             STATE.movelHist = remote.movelHist;
             ensureRegionSkeletons();
-            ALL_REGIONS.forEach(r => {
-                if (preservedMvByReg[r] && preservedMvByReg[r].realVendasHist && !STATE.movelHist[r].realVendasHist) {
-                    STATE.movelHist[r].realVendasHist = preservedMvByReg[r].realVendasHist;
-                    STATE.movelHist[r].realAltasHist = preservedMvByReg[r].realAltasHist;
-                }
-            });
+        }
+        if (mergeEmbeddedHistDefaults()) {
+            needsCloudMigrationPush = true;
         }
         if (remote.movelUnitsHist) STATE.movelUnitsHist = remote.movelUnitsHist;
         if (remote.movelSellerHist) {
