@@ -1102,7 +1102,7 @@
         </div>
         <h2 style="font-family:'Plus Jakarta Sans',sans-serif; font-size:1.12rem; color:#0F172A; margin-bottom:0.35rem;">Dashboard Comercial Regional</h2>
         <p id="evo-auth-subtitle" style="font-size:0.81rem; color:#475569; line-height:1.45; margin-bottom:1.25rem;">
-            Acesso restrito a colaboradores ativos.<br>Entre com sua conta Google corporativa <b>@brasiltecpar.com.br</b> ou <b>@evo.digital</b>.
+            Acesso restrito a colaboradores ativos.<br>Entre com sua conta Google corporativa <b>@brasiltecpar.com.br</b>, <b>@evo.digital</b> ou <b>@sejaamigo.com.br</b>.
         </p>
 
         <div id="evo-auth-loading" style="display:none; padding:1rem 0; color:#0038A8; font-weight:600; font-size:0.84rem;">
@@ -1378,7 +1378,7 @@
                 <!-- CONTROLE DE SEGURANÇA CORPORATIVA & BLOQUEIO DE EX-COLABORADORES -->
                 <div class="p10-subpanel" style="background:#F8FAFC; border-radius:4px; border:1px solid #CBD5E1; border-left:3px solid var(--evo-navy); display:flex; flex-direction:column;">
                     <div style="font-size:0.68rem; font-weight:700; color:var(--evo-navy); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
-                        <span><i class="fa-solid fa-user-shield"></i> Segurança Corporativa (@brasiltecpar.com.br / @evo.digital)</span>
+                        <span><i class="fa-solid fa-user-shield"></i> Segurança Corporativa (@brasiltecpar.com.br / @evo.digital / @sejaamigo.com.br)</span>
                         <span id="sec-auth-mode-badge" class="badge badge-cyan" style="font-size:0.61rem; padding:1px 5px;"></span>
                     </div>
                     <div class="filter-bar">
@@ -1502,6 +1502,23 @@
                     </div>
                     <div class="table-wrap" style="max-height:290px; overflow-y:auto;" id="p10-aa-crud"></div>
                 </div>
+            </div>
+
+            <!-- DIAGNÓSTICO DE ACESSOS DIÁRIOS (NÓ ISOLADO /access_logs) -->
+            <div class="card-box" id="p10-access-logs-card">
+                <div class="box-header">
+                    <div class="box-title"><i class="fa-solid fa-user-check"></i> Diagnóstico de Acessos Diários (Auditoria Corporativa)</div>
+                    <div class="filter-bar">
+                        <button class="pill-btn active" id="btn-alog-today" onclick="setAccessLogQuickDate(0)">Hoje</button>
+                        <button class="pill-btn" id="btn-alog-yesterday" onclick="setAccessLogQuickDate(-1)">Ontem</button>
+                        <input type="date" id="access-log-date" onchange="loadAccessLogsForDate(this.value)" title="Selecionar data do diagnóstico">
+                        <input type="text" id="access-log-search" placeholder="Filtrar colaborador ou e-mail..." oninput="renderAccessLogsTable()" style="min-width:185px;">
+                        <button class="btn primary" onclick="loadAccessLogsForDate()"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+                        <button class="btn secondary" onclick="exportAccessLogsCSV()" title="Baixar planilha CSV dos acessos do dia"><i class="fa-solid fa-file-csv"></i> Exportar CSV</button>
+                    </div>
+                </div>
+                <div id="access-logs-summary" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:0.71rem;"></div>
+                <div class="table-wrap" style="max-height:260px; overflow-y:auto;" id="p10-access-logs-table"></div>
             </div>
         </div>
 </section>
@@ -1754,7 +1771,7 @@
 
     function isValidCorporateEmail(email) {
         const clean = (email || '').trim().toLowerCase();
-        return /^[a-z0-9._%+-]+@(brasiltecpar\.com\.br|evo\.digital)$/.test(clean);
+        return /^[a-z0-9._%+-]+@(brasiltecpar\.com\.br|evo\.digital|sejaamigo\.com\.br)$/.test(clean);
     }
 
     function isEmailBlocked(email) {
@@ -1883,6 +1900,257 @@
         if (btn) {
             btn.title = (verifiedByServer ? 'Google Workspace verificado: ' : 'E-mail corporativo: ') + email + ' (clique para sair/trocar)';
         }
+        if (verifiedByServer) {
+            logCorporateAccess(email).catch(() => {});
+        }
+    }
+
+    // --- DIAGNÓSTICO DE ACESSOS DIÁRIOS (NÓ ISOLADO /access_logs) ---
+    let currentAccessLogsRows = [];
+    let currentAccessLogsDateStr = '';
+
+    function getTodayIsoLocal(offsetDays = 0) {
+        const d = new Date();
+        if (offsetDays) d.setDate(d.getDate() + offsetDays);
+        const pad = n => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+
+    function getAccessLogsBaseUrl() {
+        const raw = normalizeCloudUrl((STATE.config && STATE.config.cloudSyncUrl) || '');
+        if (!raw) return '';
+        return raw.replace(/\/evo\.json(\?.*)?$/i, '/access_logs').replace(/\.json(\?.*)?$/i, '_access_logs');
+    }
+
+    function encodeEmailFirebaseKey(email) {
+        return (email || '').trim().toLowerCase()
+            .replace(/@/g, '_at_')
+            .replace(/\./g, '_dot_')
+            .replace(/[#$[\]\/]/g, '_');
+    }
+
+    function detectDeviceLabel() {
+        const ua = navigator.userAgent || '';
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) ? 'Mobile' : 'Desktop';
+    }
+
+    function formatDisplayNameFromEmail(email) {
+        const local = (email || '').split('@')[0] || '';
+        return local.split(/[._-]+/).filter(Boolean)
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+            .join(' ') || email;
+    }
+
+    async function logCorporateAccess(email) {
+        if (!email || window.location.protocol === 'file:') return;
+        const baseUrl = getAccessLogsBaseUrl();
+        if (!baseUrl) return;
+
+        const todayIso = getTodayIsoLocal(0);
+        const sessKey = 'evo_logged_access_' + todayIso + '_' + email;
+        try {
+            if (sessionStorage.getItem(sessKey)) return;
+            sessionStorage.setItem(sessKey, '1');
+        } catch (e) {}
+
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        const emailKey = encodeEmailFirebaseKey(email);
+        const device = detectDeviceLabel();
+        const authParam = await getFirebaseAuthQueryParam(false);
+        const recordUrl = `${baseUrl}/${todayIso}/${emailKey}.json${authParam}`;
+
+        try {
+            const getRes = await fetch(recordUrl, { cache: 'no-store' });
+            const existing = getRes.ok ? await getRes.json() : null;
+            if (existing && typeof existing === 'object') {
+                await fetch(recordUrl, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lastAt: timeStr,
+                        count: (Number(existing.count) || 1) + 1,
+                        device: device
+                    })
+                });
+            } else {
+                await fetch(recordUrl, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: email,
+                        name: formatDisplayNameFromEmail(email),
+                        firstAt: timeStr,
+                        lastAt: timeStr,
+                        count: 1,
+                        device: device
+                    })
+                });
+            }
+            cleanupOldAccessLogs(baseUrl, todayIso).catch(() => {});
+        } catch (err) {
+            try { sessionStorage.removeItem(sessKey); } catch (e) {}
+        }
+    }
+
+    async function cleanupOldAccessLogs(baseUrl, todayIso) {
+        const cleanFlagKey = 'evo_alog_cleanup_' + todayIso;
+        try {
+            if (localStorage.getItem(cleanFlagKey)) return;
+            localStorage.setItem(cleanFlagKey, '1');
+        } catch (e) {}
+
+        const authParam = await getFirebaseAuthQueryParam(true);
+        const shallowUrl = `${baseUrl}.json?shallow=true${authParam}`;
+        const res = await fetch(shallowUrl, { cache: 'no-store' });
+        if (!res.ok) return;
+        const keysObj = await res.json();
+        if (!keysObj || typeof keysObj !== 'object') return;
+
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 30);
+        const pad = n => String(n).padStart(2, '0');
+        const cutoffIso = `${cutoff.getFullYear()}-${pad(cutoff.getMonth() + 1)}-${pad(cutoff.getDate())}`;
+
+        const delAuth = await getFirebaseAuthQueryParam(false);
+        for (const dateKey of Object.keys(keysObj)) {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateKey) && dateKey < cutoffIso) {
+                await fetch(`${baseUrl}/${dateKey}.json${delAuth}`, { method: 'DELETE' });
+            }
+        }
+    }
+
+    function setAccessLogQuickDate(offsetDays) {
+        const targetIso = getTodayIsoLocal(offsetDays);
+        const inp = document.getElementById('access-log-date');
+        if (inp) inp.value = targetIso;
+        const bToday = document.getElementById('btn-alog-today');
+        const bYest = document.getElementById('btn-alog-yesterday');
+        if (bToday) bToday.classList.toggle('active', offsetDays === 0);
+        if (bYest) bYest.classList.toggle('active', offsetDays === -1);
+        loadAccessLogsForDate(targetIso);
+    }
+
+    async function loadAccessLogsForDate(dateStr) {
+        const tblEl = document.getElementById('p10-access-logs-table');
+        const sumEl = document.getElementById('access-logs-summary');
+        const inp = document.getElementById('access-log-date');
+        const targetDate = dateStr || (inp && inp.value) || getTodayIsoLocal(0);
+        if (inp && inp.value !== targetDate) inp.value = targetDate;
+        currentAccessLogsDateStr = targetDate;
+
+        const bToday = document.getElementById('btn-alog-today');
+        const bYest = document.getElementById('btn-alog-yesterday');
+        if (bToday) bToday.classList.toggle('active', targetDate === getTodayIsoLocal(0));
+        if (bYest) bYest.classList.toggle('active', targetDate === getTodayIsoLocal(-1));
+
+        const baseUrl = getAccessLogsBaseUrl();
+        if (!baseUrl) {
+            if (tblEl) tblEl.innerHTML = '<div style="padding:12px; color:var(--text-muted);">Configure a URL Nuvem acima para visualizar o diagnóstico de acessos.</div>';
+            return;
+        }
+        if (tblEl) tblEl.innerHTML = '<div style="padding:12px; color:var(--evo-blue); font-weight:600;"><i class="fa-solid fa-circle-notch fa-spin"></i> Carregando acessos de ' + targetDate.split('-').reverse().join('/') + '...</div>';
+
+        try {
+            const authParam = await getFirebaseAuthQueryParam(true);
+            const res = await fetch(`${baseUrl}/${targetDate}.json?t=${Date.now()}${authParam}`, { cache: 'no-store' });
+            if (!res.ok) {
+                if (tblEl) tblEl.innerHTML = '<div style="padding:12px; color:var(--red);">Não foi possível ler os logs (HTTP ' + res.status + '). Verifique o login Google corporativo.</div>';
+                return;
+            }
+            const data = await res.json();
+            currentAccessLogsRows = data && typeof data === 'object' ? Object.values(data) : [];
+            currentAccessLogsRows.sort((a, b) => String(b.lastAt || '').localeCompare(String(a.lastAt || '')));
+            renderAccessLogsTable();
+        } catch (err) {
+            if (tblEl) tblEl.innerHTML = '<div style="padding:12px; color:var(--red);">Falha de rede ao consultar acessos.</div>';
+        }
+    }
+
+    function renderAccessLogsTable() {
+        const tblEl = document.getElementById('p10-access-logs-table');
+        const sumEl = document.getElementById('access-logs-summary');
+        if (!tblEl) return;
+
+        const q = normName((document.getElementById('access-log-search') && document.getElementById('access-log-search').value) || '');
+        const rows = currentAccessLogsRows.filter(r => !q || normName(r.email).includes(q) || normName(r.name).includes(q) || normName(r.device).includes(q));
+
+        const uniqueUsers = rows.length;
+        const totalHits = rows.reduce((s, r) => s + (Number(r.count) || 1), 0);
+        const mobileUsers = rows.filter(r => r.device === 'Mobile').length;
+        const desktopUsers = uniqueUsers - mobileUsers;
+
+        if (sumEl) {
+            sumEl.innerHTML = `
+                <span class="badge badge-cyan"><i class="fa-solid fa-users"></i> Usuários Únicos: <b>${uniqueUsers}</b></span>
+                <span class="badge badge-good"><i class="fa-solid fa-arrow-right-to-bracket"></i> Total de Acessos: <b>${totalHits}</b></span>
+                <span class="badge" style="background:#E2E8F0; color:#1E293B;"><i class="fa-solid fa-desktop"></i> Desktop: <b>${desktopUsers}</b> &bull; <i class="fa-solid fa-mobile-screen"></i> Mobile: <b>${mobileUsers}</b></span>
+                <span style="color:var(--text-muted); margin-left:auto;">Retenção automática: últimos 30 dias (1 linha consolidada por colaborador/dia)</span>
+            `;
+        }
+
+        if (rows.length === 0) {
+            tblEl.innerHTML = `<div style="padding:14px; color:var(--text-muted); font-style:italic;">Nenhum acesso registrado para ${currentAccessLogsDateStr.split('-').reverse().join('/')}.</div>`;
+            return;
+        }
+
+        let h = `<table><thead><tr>
+            <th style="width:42px;">#</th>
+            <th class="left">Colaborador</th>
+            <th class="left">E-mail Corporativo</th>
+            <th>Domínio</th>
+            <th>1º Acesso</th>
+            <th>Último Acesso</th>
+            <th>Qtd. Acessos</th>
+            <th>Dispositivo</th>
+        </tr></thead><tbody>`;
+
+        rows.forEach((r, idx) => {
+            const em = (r.email || '').toLowerCase();
+            const domain = em.includes('@') ? '@' + em.split('@')[1] : '-';
+            const devIcon = r.device === 'Mobile' ? '<i class="fa-solid fa-mobile-screen"></i> Mobile' : '<i class="fa-solid fa-desktop"></i> Desktop';
+            h += `<tr>
+                <td><b>${idx + 1}</b></td>
+                <td class="left"><b>${r.name || formatDisplayNameFromEmail(em)}</b></td>
+                <td class="left">${em}</td>
+                <td><span class="badge ${domain === '@evo.digital' ? 'badge-cyan' : (domain === '@sejaamigo.com.br' ? 'badge-gold' : 'badge-good')}">${domain}</span></td>
+                <td>${r.firstAt || '-'}</td>
+                <td><b>${r.lastAt || '-'}</b></td>
+                <td><b>${Number(r.count) || 1}x</b></td>
+                <td>${devIcon}</td>
+            </tr>`;
+        });
+        h += `</tbody></table>`;
+        tblEl.innerHTML = h;
+    }
+
+    function exportAccessLogsCSV() {
+        if (!currentAccessLogsRows || currentAccessLogsRows.length === 0) {
+            alert('Não há registros de acesso na data selecionada para exportar.');
+            return;
+        }
+        const lines = ['Data;Colaborador;Email;Dominio;Primeiro_Acesso;Ultimo_Acesso;Qtd_Acessos;Dispositivo'];
+        currentAccessLogsRows.forEach(r => {
+            const em = (r.email || '').toLowerCase();
+            const dom = em.includes('@') ? '@' + em.split('@')[1] : '';
+            lines.push([
+                currentAccessLogsDateStr,
+                `"${(r.name || formatDisplayNameFromEmail(em)).replace(/"/g, '""')}"`,
+                em,
+                dom,
+                r.firstAt || '',
+                r.lastAt || '',
+                Number(r.count) || 1,
+                r.device || 'Desktop'
+            ].join(';'));
+        });
+        const csvContent = '﻿' + lines.join('
+');
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
+        link.download = `diagnostico_acessos_evo_${currentAccessLogsDateStr}.csv`;
+        link.click();
     }
 
     async function forceLogoutCorporate(reasonMsg) {
@@ -1968,7 +2236,7 @@
         const email = (inp ? inp.value : '').replace(/\s+/g, '').toLowerCase();
 
         if (!isValidCorporateEmail(email)) {
-            showAuthGateMessage('Domínio não autorizado. Utilize um e-mail <b>@brasiltecpar.com.br</b> ou <b>@evo.digital</b>.', '');
+            showAuthGateMessage('Domínio não autorizado. Utilize um e-mail <b>@brasiltecpar.com.br</b>, <b>@evo.digital</b> ou <b>@sejaamigo.com.br</b>.', '');
             if (inp) inp.focus();
             return;
         }
@@ -2118,7 +2386,7 @@
                 localStorage.removeItem('evo_authorized_email');
                 localStorage.removeItem('evo_authorized_ts');
             } catch (ex) {}
-            lockScreenToAuthGate('A conta <b>' + email + '</b> não é permitida. Clique em <b>Entrar com o Google</b> e selecione seu e-mail <b>@brasiltecpar.com.br</b> ou <b>@evo.digital</b>.');
+            lockScreenToAuthGate('A conta <b>' + email + '</b> não é permitida. Clique em <b>Entrar com o Google</b> e selecione seu e-mail <b>@brasiltecpar.com.br</b>, <b>@evo.digital</b> ou <b>@sejaamigo.com.br</b>.');
             return false;
         }
         if (isEmailBlocked(email)) {
@@ -5234,6 +5502,7 @@
         renderAgentsCrudTable();
         renderAaCrudTable();
         renderCapacityTable();
+        loadAccessLogsForDate();
     }
 
     function resetSimulator() {
@@ -5760,7 +6029,7 @@
         const inp = document.getElementById('block-email-input');
         const em = (inp ? inp.value : '').trim().toLowerCase();
         if (!isValidCorporateEmail(em)) {
-            alert('Informe um e-mail válido (@brasiltecpar.com.br ou @evo.digital).');
+            alert('Informe um e-mail válido (@brasiltecpar.com.br, @evo.digital ou @sejaamigo.com.br).');
             return;
         }
         if (!Array.isArray(STATE.config.blockedEmails)) STATE.config.blockedEmails = [];
@@ -5833,6 +6102,7 @@
         if (cloneDoc.querySelector('#import-feedback')) cloneDoc.querySelector('#import-feedback').textContent = '';
         if (cloneDoc.querySelector('#p10-agents-crud')) cloneDoc.querySelector('#p10-agents-crud').innerHTML = '';
         if (cloneDoc.querySelector('#p10-aa-crud')) cloneDoc.querySelector('#p10-aa-crud').innerHTML = '';
+        if (cloneDoc.querySelector('#p10-access-logs-table')) cloneDoc.querySelector('#p10-access-logs-table').innerHTML = '';
 
         const link = document.createElement('a');
         link.href = URL.createObjectURL(new Blob(['<!DOCTYPE html>\n' + cloneDoc.outerHTML], { type: 'text/html;charset=utf-8' }));
