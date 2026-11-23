@@ -1191,13 +1191,13 @@
                 <div class="box-header">
                     <div class="box-title"><i class="fa-solid fa-chart-column"></i> Evolução Histórica & Projeção — Vendas</div>
                 </div>
-                <div style="height: 215px; position: relative;"><canvas id="chartConsolidadoVendas"></canvas></div>
+                <div style="height: 232px; position: relative;"><canvas id="chartConsolidadoVendas"></canvas></div>
             </div>
             <div class="card-box">
                 <div class="box-header">
                     <div class="box-title"><i class="fa-solid fa-chart-column"></i> Evolução Histórica & Projeção — Altas</div>
                 </div>
-                <div style="height: 215px; position: relative;"><canvas id="chartConsolidadoAltas"></canvas></div>
+                <div style="height: 232px; position: relative;"><canvas id="chartConsolidadoAltas"></canvas></div>
             </div>
         </div>
         <div class="card-box">
@@ -2460,6 +2460,9 @@
             const barMeta = chart.getDatasetMeta(0);
             if (!metaMeta || !barMeta || !barMeta.data.length) return;
 
+            const yScale = chart.scales && chart.scales.y;
+            const yMaxVal = yScale ? yScale.max : Infinity;
+            const clampCeiling = yMaxVal * 0.93;
             const ctx = chart.ctx;
             ctx.save();
             metaMeta.data.forEach((pt, i) => {
@@ -2469,7 +2472,8 @@
                 const barW = barEl ? barEl.width : 28;
                 const halfW = Math.max(12, barW * 0.56);
                 const x = pt.x;
-                const y = pt.y;
+                const isOutlier = yScale && val > clampCeiling;
+                const y = isOutlier ? yScale.getPixelForValue(clampCeiling) : pt.y;
 
                 // Sombra sutil para destacar o traço sobre o degradê azul
                 ctx.beginPath();
@@ -2477,16 +2481,16 @@
                 ctx.lineTo(x + halfW, y);
                 ctx.lineWidth = 5;
                 ctx.lineCap = 'round';
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.88)';
                 ctx.stroke();
 
-                // Traço principal Cinza Escuro Azulado (Meta / Forecast)
+                // Traço principal (destaque âmbar se meta for pico fora de escala)
                 ctx.beginPath();
                 ctx.moveTo(x - halfW, y);
                 ctx.lineTo(x + halfW, y);
                 ctx.lineWidth = 2.8;
                 ctx.lineCap = 'round';
-                ctx.strokeStyle = '#334155';
+                ctx.strokeStyle = isOutlier ? '#D97706' : '#334155';
                 ctx.stroke();
             });
             ctx.restore();
@@ -2856,6 +2860,15 @@
         metasHist.push(fcAtual);
         const projChartColor = projAtual >= fcAtual ? '#059669' : '#DC2626';
 
+        // Escala Y inteligente: evita que picos atípicos de meta (ex: Ago/26 em CO/RS) achatem as barras
+        const maxBarVal = Math.max(...totalsHist, projAtual, 1);
+        const posMetas = metasHist.filter(v => v > 0).sort((a, b) => a - b);
+        const medMeta = posMetas.length ? posMetas[Math.floor(posMetas.length / 2)] : maxBarVal;
+        const normalMetas = posMetas.filter(v => v <= medMeta * 1.35);
+        const refMetaVal = normalMetas.length ? Math.max(...normalMetas) : maxBarVal;
+        const smartYMax = Math.round(Math.max(maxBarVal * 1.24, refMetaVal * 1.16));
+        const outlierCeiling = smartYMax * 0.93;
+
         // Largura e fontes proporcionais e dinâmicas para que o rótulo do Forecast caiba dentro da coluna
         const nCols = labelsHist.length;
         const scaleFactor = nCols <= 11 ? 1 : Math.max(0.76, 11 / nCols);
@@ -2958,24 +2971,40 @@
                         borderColor: '#334155',
                         backgroundColor: '#334155',
                         datalabels: {
-                            display: true,
+                            display: (ctx) => {
+                                const v = ctx.dataset.data[ctx.dataIndex];
+                                return v != null && v > 0;
+                            },
                             anchor: 'center',
                             align: (ctx) => {
                                 const idx = ctx.dataIndex;
                                 if (idx === labelsHist.length - 1) return 'bottom';
                                 const barTop = totalsHist[idx];
                                 const metaVal = metasHist[idx];
+                                if (metaVal > outlierCeiling) return 'bottom';
                                 return metaVal >= barTop ? 'top' : 'bottom';
                             },
-                            offset: 4,
-                            color: '#1E293B',
-                            backgroundColor: 'rgba(241, 245, 249, 0.94)',
-                            borderColor: '#94A3B8',
+                            offset: (ctx) => {
+                                const idx = ctx.dataIndex;
+                                const metaVal = metasHist[idx];
+                                if (metaVal > outlierCeiling && ctx.chart && ctx.chart.scales && ctx.chart.scales.y) {
+                                    const yScale = ctx.chart.scales.y;
+                                    const diffPx = Math.max(0, yScale.getPixelForValue(outlierCeiling) - yScale.getPixelForValue(metaVal));
+                                    return diffPx + 5;
+                                }
+                                return 4;
+                            },
+                            color: (ctx) => (metasHist[ctx.dataIndex] > outlierCeiling ? '#92400E' : '#1E293B'),
+                            backgroundColor: (ctx) => (metasHist[ctx.dataIndex] > outlierCeiling ? '#FEF3C7' : 'rgba(241, 245, 249, 0.94)'),
+                            borderColor: (ctx) => (metasHist[ctx.dataIndex] > outlierCeiling ? '#F59E0B' : '#94A3B8'),
                             borderWidth: 1,
                             borderRadius: 3,
                             padding: { top: 1, bottom: 1, left: 2.5, right: 2.5 },
                             font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", size: fcFontSize, weight: '700' },
-                            formatter: (v, ctx) => (ctx.dataIndex === labelsHist.length - 1 ? 'FC: ' : '') + v.toLocaleString('pt-BR')
+                            formatter: (v, ctx) => {
+                                if (ctx.dataIndex === labelsHist.length - 1) return 'FC: ' + v.toLocaleString('pt-BR');
+                                return (v > outlierCeiling ? '▲ ' : '') + v.toLocaleString('pt-BR');
+                            }
                         }
                     }
                 ]
@@ -2996,7 +3025,11 @@
                             font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", size: 11, weight: '600' }
                         }
                     },
-                    tooltip: { mode: 'index', intersect: false }
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        filter: (item) => !(item.dataset.label === 'Projeção' && Number(item.raw) === 0)
+                    }
                 },
                 scales: {
                     x: {
@@ -3009,7 +3042,7 @@
                             color: '#1E293B'
                         }
                     },
-                    y: { stacked: true, display: false, min: 0, suggestedMax: Math.max(...totalsHist, projAtual, ...metasHist) * 1.24 }
+                    y: { stacked: true, display: false, min: 0, max: smartYMax }
                 }
             }
         });
