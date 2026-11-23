@@ -1425,28 +1425,29 @@
                 <div id="import-feedback" style="font-size:0.70rem; color:var(--green); font-weight:600;"></div>
             </div>
 
-            
-                <div class="table-wrap" id="p10-chgoals-table" style="box-shadow:none; border:none; width:100%;"></div>
+            <div class="card-box" style="padding:0.42rem 0.70rem; background:#EFF6FF; border-color:#BFDBFE;">
+                <div class="box-header">
+                    <div class="box-title" style="font-size:0.78rem;"><i class="fa-solid fa-map-location-dot"></i> Regional Ativa nas Matrizes &amp; Painel: <span id="p10-unified-reg-badge" class="badge badge-cyan" style="font-size:0.72rem; margin-left:4px;">SP</span></div>
+                    <div class="filter-bar" id="p10-unified-reg-controls">
+                        <button class="pill-btn" onclick="setRegion('CO')">CO</button>
+                        <button class="pill-btn" onclick="setRegion('RJ')">RJ</button>
+                        <button class="pill-btn" onclick="setRegion('RS')">RS</button>
+                        <button class="pill-btn active" onclick="setRegion('SP')">SP</button>
+                    </div>
+                </div>
             </div>
 
             <div class="grid-2" style="grid-template-columns: 1fr 1fr; gap: 0.8rem;">
                 <div class="card-box" id="p10-prodrules-card" style="min-width:0;">
                     <div class="box-header">
-                        <div class="box-title"><i class="fa-solid fa-sliders"></i> Matriz de Regras de Produtividade (Rampagem)</div>
-                        <div class="filter-bar" id="p10-prodrules-controls"></div>
+                        <div class="box-title"><i class="fa-solid fa-sliders"></i> Matriz de Regras de Produtividade (Rampagem — <span id="p10-prodrules-reg-lbl">SP</span>)</div>
                     </div>
                     <div class="table-wrap" id="p10-prodrules-table" style="box-shadow:none; border:none; width:100%;"></div>
                 </div>
 
                 <div class="card-box" style="min-width:0;">
                     <div class="box-header">
-                        <div class="box-title"><i class="fa-solid fa-sitemap"></i> Capacidade Máxima de Vagas por Líder</div>
-                        <div class="filter-bar" id="p10-capacity-controls">
-                            <button class="pill-btn" onclick="setAdminRegion('CO')">CO</button>
-                            <button class="pill-btn" onclick="setAdminRegion('RJ')">RJ</button>
-                            <button class="pill-btn" onclick="setAdminRegion('RS')">RS</button>
-                            <button class="pill-btn active" onclick="setAdminRegion('SP')">SP</button>
-                        </div>
+                        <div class="box-title"><i class="fa-solid fa-sitemap"></i> Capacidade Máxima de Vagas por Líder (<span id="p10-capacity-reg-lbl">SP</span>)</div>
                     </div>
                     <div class="table-wrap" id="p10-capacity-table" style="box-shadow:none; border:none; width:100%;">
                         <!-- JS fará o preenchimento da tabela aqui -->
@@ -1457,13 +1458,12 @@
             <div class="grid-2" style="grid-template-columns: 1.15fr 0.85fr;">
                 <div class="card-box">
                     <div class="box-header">
-                        <div class="box-title"><i class="fa-solid fa-mobile-retro"></i> Metas, Admissão & Portabilidade — Vendedores</div>
-                        <div class="filter-bar" id="p10-agents-reg-controls"></div>
+                        <div class="box-title"><i class="fa-solid fa-mobile-retro"></i> Metas, Admissão & Portabilidade — Vendedores (<span id="p10-agents-reg-lbl">SP</span>)</div>
                     </div>
                     <div style="background:#F1F5F9; border:1px solid #CBD5E1; border-radius:5px; padding:6px 8px; display:flex; flex-direction:column; gap:5px;">
                         <div class="filter-bar">
                             <input type="text" id="new-ag-nome" placeholder="Nome Exato BI" style="min-width:130px; flex:1.5;">
-                            <select id="new-ag-reg" onchange="setAdminRegion(this.value)" style="width:52px;"><option value="CO">CO</option><option value="RJ">RJ</option><option value="RS">RS</option><option value="SP" selected>SP</option></select>
+                            <select id="new-ag-reg" onchange="setRegion(this.value)" style="width:52px;"><option value="CO">CO</option><option value="RJ">RJ</option><option value="RS">RS</option><option value="SP" selected>SP</option></select>
                             <input type="text" id="new-ag-uni" placeholder="Unidade (ex: GRS)" style="width:94px;">
                             <select id="new-ag-canal" onchange="if(this.value==='Bko' && !document.getElementById('new-ag-lider').value) document.getElementById('new-ag-lider').value='BRENNA MOURA';" style="width:92px;"><option value="Lojas">Lojas</option><option value="PaP">PaP</option><option value="Inside Sales">Inside Sales</option><option value="Bko">Bko</option></select>
                             <input type="text" id="new-ag-lider" placeholder="Líder" style="width:105px;">
@@ -1486,14 +1486,13 @@
 
                 <div class="card-box">
                     <div class="box-header">
-                        <div class="box-title"><i class="fa-solid fa-handshake"></i> Parceiros AA (De-Para BI & Metas)</div>
-                        <div class="filter-bar" id="p10-aa-reg-controls"></div>
+                        <div class="box-title"><i class="fa-solid fa-handshake"></i> Parceiros AA (De-Para BI & Metas — <span id="p10-aa-reg-lbl">SP</span>)</div>
                     </div>
                     <div style="background:#F1F5F9; border:1px solid #CBD5E1; border-radius:5px; padding:6px 8px; display:flex; flex-direction:column; gap:5px;">
                         <div class="filter-bar">
                             <input type="text" id="new-aa-fantasia" placeholder="Nome Fantasia" style="min-width:95px; flex:1;">
                             <input type="text" id="new-aa-raz" placeholder="Razão Social BI" style="min-width:125px; flex:1.3;">
-                            <select id="new-aa-reg" onchange="setAdminRegion(this.value)" style="width:52px;"><option value="CO">CO</option><option value="RJ">RJ</option><option value="RS">RS</option><option value="SP" selected>SP</option></select>
+                            <select id="new-aa-reg" onchange="setRegion(this.value)" style="width:52px;"><option value="CO">CO</option><option value="RJ">RJ</option><option value="RS">RS</option><option value="SP" selected>SP</option></select>
                         </div>
                         <div class="filter-bar" style="justify-content:space-between;">
                             <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
@@ -2077,25 +2076,41 @@
         }
     }
 
+    function getDistinctDailyAccessRows(rowsList) {
+        const map = new Map();
+        (rowsList || []).forEach(r => {
+            const em = String(r.email || '').toLowerCase().trim();
+            if (!em) return;
+            if (!map.has(em)) {
+                map.set(em, {
+                    email: em,
+                    name: r.name || formatDisplayNameFromEmail(em),
+                    accessTime: r.firstAt || r.lastAt || '-',
+                    device: r.device || 'Desktop'
+                });
+            }
+        });
+        return Array.from(map.values());
+    }
+
     function renderAccessLogsTable() {
         const tblEl = document.getElementById('p10-access-logs-table');
         const sumEl = document.getElementById('access-logs-summary');
         if (!tblEl) return;
 
         const q = normName((document.getElementById('access-log-search') && document.getElementById('access-log-search').value) || '');
-        const rows = currentAccessLogsRows.filter(r => !q || normName(r.email).includes(q) || normName(r.name).includes(q) || normName(r.device).includes(q));
+        const distinctAll = getDistinctDailyAccessRows(currentAccessLogsRows);
+        const rows = distinctAll.filter(r => !q || normName(r.email).includes(q) || normName(r.name).includes(q) || normName(r.device).includes(q));
 
         const uniqueUsers = rows.length;
-        const totalHits = rows.reduce((s, r) => s + (Number(r.count) || 1), 0);
         const mobileUsers = rows.filter(r => r.device === 'Mobile').length;
         const desktopUsers = uniqueUsers - mobileUsers;
 
         if (sumEl) {
             sumEl.innerHTML = `
-                <span class="badge badge-cyan"><i class="fa-solid fa-users"></i> Usuários Únicos: <b>${uniqueUsers}</b></span>
-                <span class="badge badge-good"><i class="fa-solid fa-arrow-right-to-bracket"></i> Total de Acessos: <b>${totalHits}</b></span>
+                <span class="badge badge-cyan"><i class="fa-solid fa-users"></i> Colaboradores que Acessaram: <b>${uniqueUsers}</b></span>
                 <span class="badge" style="background:#E2E8F0; color:#1E293B;"><i class="fa-solid fa-desktop"></i> Desktop: <b>${desktopUsers}</b> &bull; <i class="fa-solid fa-mobile-screen"></i> Mobile: <b>${mobileUsers}</b></span>
-                <span style="color:var(--text-muted); margin-left:auto;">Retenção automática: últimos 30 dias (1 linha consolidada por colaborador/dia)</span>
+                <span style="color:var(--text-muted); margin-left:auto;">1 registro único por colaborador no dia (retenção de 30 dias)</span>
             `;
         }
 
@@ -2109,25 +2124,23 @@
             <th class="left">Colaborador</th>
             <th class="left">E-mail Corporativo</th>
             <th>Domínio</th>
-            <th>1º Acesso</th>
-            <th>Último Acesso</th>
-            <th>Qtd. Acessos</th>
+            <th>Horário Acesso</th>
             <th>Dispositivo</th>
+            <th>Status</th>
         </tr></thead><tbody>`;
 
         rows.forEach((r, idx) => {
-            const em = (r.email || '').toLowerCase();
+            const em = r.email;
             const domain = em.includes('@') ? '@' + em.split('@')[1] : '-';
             const devIcon = r.device === 'Mobile' ? '<i class="fa-solid fa-mobile-screen"></i> Mobile' : '<i class="fa-solid fa-desktop"></i> Desktop';
             h += `<tr>
                 <td><b>${idx + 1}</b></td>
-                <td class="left"><b>${r.name || formatDisplayNameFromEmail(em)}</b></td>
+                <td class="left"><b>${r.name}</b></td>
                 <td class="left">${em}</td>
                 <td><span class="badge ${domain === '@evo.digital' ? 'badge-cyan' : (domain === '@sejaamigo.com.br' ? 'badge-gold' : 'badge-good')}">${domain}</span></td>
-                <td>${r.firstAt || '-'}</td>
-                <td><b>${r.lastAt || '-'}</b></td>
-                <td><b>${Number(r.count) || 1}x</b></td>
+                <td><b>${r.accessTime}</b></td>
                 <td>${devIcon}</td>
+                <td><span class="badge badge-good"><i class="fa-solid fa-check"></i> Acessou</span></td>
             </tr>`;
         });
         h += `</tbody></table>`;
@@ -2135,23 +2148,23 @@
     }
 
     function exportAccessLogsCSV() {
-        if (!currentAccessLogsRows || currentAccessLogsRows.length === 0) {
+        const distinctRows = getDistinctDailyAccessRows(currentAccessLogsRows);
+        if (distinctRows.length === 0) {
             alert('Não há registros de acesso na data selecionada para exportar.');
             return;
         }
-        const lines = ['Data;Colaborador;Email;Dominio;Primeiro_Acesso;Ultimo_Acesso;Qtd_Acessos;Dispositivo'];
-        currentAccessLogsRows.forEach(r => {
-            const em = (r.email || '').toLowerCase();
+        const lines = ['Data;Colaborador;Email;Dominio;Horario_Acesso;Dispositivo;Status'];
+        distinctRows.forEach(r => {
+            const em = r.email;
             const dom = em.includes('@') ? '@' + em.split('@')[1] : '';
             lines.push([
                 currentAccessLogsDateStr,
-                `"${(r.name || formatDisplayNameFromEmail(em)).replace(/"/g, '""')}"`,
+                `"${r.name.replace(/"/g, '""')}"`,
                 em,
                 dom,
-                r.firstAt || '',
-                r.lastAt || '',
-                Number(r.count) || 1,
-                r.device || 'Desktop'
+                r.accessTime,
+                r.device,
+                'Acessou'
             ].join(';'));
         });
         const csvContent = '\uFEFF' + lines.join('\n');
@@ -2817,8 +2830,18 @@
     function setRegion(reg) {
         ensureRegionSkeletons();
         currentRegion = reg;
-        document.querySelectorAll('#p10-capacity-controls .pill-btn').forEach(b => {
-            b.classList.toggle('active', b.getAttribute('onclick') === `setCapacityRegion('${reg}', this)`);
+        prodRulesEditRegion = reg;
+        agentsCrudRegion = reg;
+        aaCrudRegion = reg;
+        currentCapacityRegion = reg;
+        document.querySelectorAll('#p10-unified-reg-controls .pill-btn').forEach(b => {
+            b.classList.toggle('active', b.getAttribute('onclick') === `setRegion('${reg}')`);
+        });
+        const badgeEl = document.getElementById('p10-unified-reg-badge');
+        if (badgeEl) badgeEl.textContent = reg;
+        ['p10-prodrules-reg-lbl', 'p10-capacity-reg-lbl', 'p10-agents-reg-lbl', 'p10-aa-reg-lbl'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = reg;
         });
         const hdrEl = document.getElementById('hdr-region-label');
         if (hdrEl) hdrEl.textContent = '| REGIONAIS';
@@ -5552,32 +5575,22 @@
         document.getElementById('p8-bko-rk').innerHTML = hBko;
     }
 
-    let adminRegion = 'SP';
-    
-    function setAdminRegion(reg) {
-        adminRegion = reg;
+    let prodRulesEditRegion = 'SP';
+
+    function setProdRulesEditRegion(reg) {
+        prodRulesEditRegion = reg;
         renderProdRulesEditor();
-        renderAgentsCrudTable();
-        renderAaCrudTable();
-        renderCapacityTable();
     }
 
-    
-
-    
-
-    
-
     function renderProdRulesEditor() {
-        const ctrlEl = document.getElementById('p10-prodrules-controls');
         const tblEl = document.getElementById('p10-prodrules-table');
-        if (!ctrlEl || !tblEl) return;
+        if (!tblEl) return;
 
         const rulesAll = ensureProdRules();
-        const reg = adminRegion || currentRegion || 'SP';
+        const reg = currentRegion || prodRulesEditRegion || 'SP';
+        const lblEl = document.getElementById('p10-prodrules-reg-lbl');
+        if (lblEl) lblEl.textContent = reg;
         const tiers = rulesAll[reg];
-
-        ctrlEl.innerHTML = `<span style="font-size:0.65rem; color:var(--text-muted); font-weight:500;">Regional:</span>${ALL_REGIONS.map(r => `<button class="pill-btn ${reg === r ? 'active' : ''}" onclick="setAdminRegion('${r}')">${r}</button>`).join('')}`;
 
         let h = `<table>
             <thead>
@@ -5684,14 +5697,14 @@
     let agentsCrudRegion = 'SP';
     let aaCrudRegion = 'SP';
 
-    function setAdminRegion(reg) {
+    function setAgentsCrudRegion(reg) {
         agentsCrudRegion = reg;
         const selEl = document.getElementById('new-ag-reg');
         if (selEl) selEl.value = reg;
         renderAgentsCrudTable();
     }
 
-    function setAdminRegion(reg) {
+    function setAaCrudRegion(reg) {
         aaCrudRegion = reg;
         const selEl = document.getElementById('new-aa-reg');
         if (selEl) selEl.value = reg;
@@ -5699,20 +5712,13 @@
     }
 
     function renderAgentsCrudTable() {
-        const ctrlEl = document.getElementById('p10-agents-reg-controls');
         const tblEl = document.getElementById('p10-agents-crud');
         if (!tblEl) return;
 
-        const agReg = adminRegion || currentRegion || 'SP';
-        if (ctrlEl) {
-            ctrlEl.innerHTML = `
-                <span style="font-size:0.65rem; color:var(--text-muted); font-weight:500;">Regional:</span>
-                ${ALL_REGIONS.map(r => {
-                    const cnt = STATE.agents.filter(a => a[2] === r && a[7] !== 'Inativo').length;
-                    return `<button class="pill-btn ${agReg === r ? 'active' : ''}" onclick="setAdminRegion('${r}')">${r} (${cnt})</button>`;
-                }).join('')}
-            `;
-        }
+        const agReg = currentRegion || agentsCrudRegion || 'SP';
+        const cnt = STATE.agents.filter(a => a[2] === agReg && a[7] !== 'Inativo').length;
+        const lblEl = document.getElementById('p10-agents-reg-lbl');
+        if (lblEl) lblEl.textContent = `${agReg} (${cnt})`;
         const selEl = document.getElementById('new-ag-reg');
         if (selEl && selEl.value !== agReg) selEl.value = agReg;
 
@@ -5767,20 +5773,15 @@
     }
 
     function renderAaCrudTable() {
-        const ctrlEl = document.getElementById('p10-aa-reg-controls');
         const tblEl = document.getElementById('p10-aa-crud');
         if (!tblEl) return;
 
-        const aaReg = adminRegion || currentRegion || 'SP';
+        const aaReg = currentRegion || aaCrudRegion || 'SP';
+        const lblEl = document.getElementById('p10-aa-reg-lbl');
+        if (lblEl) lblEl.textContent = aaReg;
         const aaMetas = STATE.config.aaMetas || {};
         const allKeys = Object.keys(aaMetas);
 
-        if (ctrlEl) {
-            ctrlEl.innerHTML = `
-                <span style="font-size:0.65rem; color:var(--text-muted); font-weight:500;">Metas Reg.:</span>
-                ${ALL_REGIONS.map(r => `<button class="pill-btn ${aaReg === r ? 'active' : ''}" onclick="setAdminRegion('${r}')">${r}</button>`).join('')}
-            `;
-        }
         const selEl = document.getElementById('new-aa-reg');
         if (selEl && selEl.value !== aaReg) selEl.value = aaReg;
 
@@ -5876,7 +5877,6 @@
         }
         renderBlockedEmailsList();
 
-        renderChannelGoalsEditor();
         renderProdRulesEditor();
         renderAgentsCrudTable();
         renderAaCrudTable();
