@@ -2915,6 +2915,7 @@
                 ? `| ${allSelected ? 'TODAS REGIONAIS' : regs.join(' + ')}`
                 : '| REGIONAIS';
         }
+        syncHeaderContextualControls();
     }
 
     function handleRegionClick(ev, reg) {
@@ -3012,11 +3013,32 @@
         renderConsolidado();
     }
 
+    function syncHeaderContextualControls(activeIdx) {
+        const idx = activeIdx || (() => {
+            const act = document.querySelector('.panel.active');
+            return act && act.id ? parseInt(act.id.replace('p', ''), 10) : 1;
+        })();
+        const isConsolidado = (idx === 1);
+        const duModeGroup = document.getElementById('p1-du-mode-group');
+        if (duModeGroup) duModeGroup.style.display = isConsolidado ? 'flex' : 'none';
+
+        const todasBtn = document.querySelector('#region-buttons .reg-btn[data-reg="TODAS"]');
+        if (todasBtn) todasBtn.style.display = isConsolidado ? '' : 'none';
+
+        // Se sair do Consolidado com multi-seleção ativa, fixa na regional vigente única
+        if (!isConsolidado && Array.isArray(selectedRegions) && selectedRegions.length > 1) {
+            selectedRegions = [currentRegion || 'SP'];
+            syncRegionButtonsUI();
+            renderAll();
+        }
+    }
+
     function openPanel(idx) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('p' + idx).classList.add('active');
         document.querySelectorAll('.tab-btn')[idx - 1].classList.add('active');
+        syncHeaderContextualControls(idx);
         setTimeout(() => window.dispatchEvent(new Event('resize')), 40);
     }
 
@@ -3805,35 +3827,6 @@
         hist.meses.forEach((m, idx) => hNet += `<th class="hist-col ${idx === hist.meses.length - 1 ? 'grp-sep' : ''}">${m}</th>`);
         hNet += `<th>Altas Proj.</th><th class="grp-sep">Churn Proj.</th><th>Net Adds Proj.</th><th class="grp-sep">M-1 Net</th><th>Efic. Altas/Vnd</th></tr></thead><tbody>`;
 
-        activeRegs.forEach(reg => {
-            const hReg = STATE.historico[reg];
-            const cReg = STATE.churn[reg];
-            const blRegOnly = STATE.bl.filter(r => r[3] === reg);
-            const rVReg = blRegOnly.reduce((s, r) => s + (Number(r[6]) || 0), 0);
-            const rAReg = blRegOnly.reduce((s, r) => s + (Number(r[7]) || 0), 0);
-            const pAReg = rAReg * du.fator;
-            const cProjReg = Number((cReg && cReg.projAtualTotal) || 0);
-            const nProjReg = pAReg - cProjReg;
-
-            const rAHistReg = Array.from({ length: hist.meses.length }, (_, i) => Number((hReg && hReg.realAltasHist && hReg.realAltasHist[i]) || 0));
-            const cHistReg  = Array.from({ length: hist.meses.length }, (_, i) => Number((cReg && cReg.histTotal && cReg.histTotal[i]) || 0));
-            const nHistReg  = Array.from({ length: hist.meses.length }, (_, i) => rAHistReg[i] - cHistReg[i]);
-
-            const m1N = nHistReg[m1Idx] || 0;
-            const efReg = rVReg > 0 ? (rAReg / rVReg) * 100 : 0;
-
-            hNet += `<tr><td class="left grp-sep"><b>REG. ${reg}</b></td>`;
-            nHistReg.forEach((nv, idx) => {
-                const vDisp = isPerDu ? (nv / duArr[idx]) : nv;
-                hNet += `<td class="hist-col ${idx === nHistReg.length - 1 ? 'grp-sep' : ''} ${nv >= 0 ? 'val-green' : 'val-red'}">${(nv >= 0 ? '+' : '') + fmtMetricVal(vDisp, isPerDu)}</td>`;
-            });
-            hNet += `<td><b>${fmtMetricVal(isPerDu ? pAReg / curDivisor : pAReg, isPerDu)}</b></td>
-                     <td class="grp-sep" style="color:var(--evo-coral); font-weight:700;">${fmtMetricVal(isPerDu ? cProjReg / curDivisor : cProjReg, isPerDu)}</td>
-                     <td class="${nProjReg >= 0 ? 'val-green' : 'val-red'}">${(nProjReg >= 0 ? '+' : '') + fmtMetricVal(isPerDu ? nProjReg / curDivisor : nProjReg, isPerDu)}</td>
-                     <td class="grp-sep ${m1N >= 0 ? 'val-green' : 'val-red'}">${(m1N >= 0 ? '+' : '') + fmtMetricVal(isPerDu ? m1N / m1Du : m1N, isPerDu)}</td>
-                     <td class="${getEficClass(efReg)}">${fmtPct(efReg)}</td></tr>`;
-        });
-
         // Linhas consolidadas de Altas, Churn e Net Adds para a seleção ativa
         const altHistDispRow = hist.meses.map((_, i) => fmtMetricVal(isPerDu ? hist.realAltasHist[i] / duArr[i] : hist.realAltasHist[i], isPerDu));
         const chuHistDispRow = hist.meses.map((_, i) => fmtMetricVal(isPerDu ? churnHist[i] / duArr[i] : churnHist[i], isPerDu));
@@ -3850,7 +3843,8 @@
         chuHistDispRow.forEach((v, idx) => hNet += `<td class="hist-col ${idx === chuHistDispRow.length - 1 ? 'grp-sep' : ''}" style="color:var(--evo-coral);">${v}</td>`);
         hNet += `<td>-</td><td class="grp-sep" style="color:var(--evo-coral); font-weight:700;">${fmtMetricVal(dispChurnProj, isPerDu)}</td><td>-</td><td class="grp-sep">${fmtMetricVal(dispChurnM1, isPerDu)}</td><td>-</td></tr>`;
 
-        hNet += `<tr class="row-total"><td class="left grp-sep">NET ADDS (${getRegionLabelText()})</td>`;
+        const netRowLabel = activeRegs.length === 1 ? `NET ADDS (${activeRegs[0]})` : `NET ADDS (${getRegionLabelText()})`;
+        hNet += `<tr class="row-total"><td class="left grp-sep">${netRowLabel}</td>`;
         netAddsHist.forEach((nv, idx) => {
             hNet += `<td class="hist-col ${idx === netAddsHist.length - 1 ? 'grp-sep' : ''} ${nv >= 0 ? 'val-green' : 'val-red'}">${netHistDispRow[idx]}</td>`;
         });
