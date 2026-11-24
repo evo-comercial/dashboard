@@ -1102,7 +1102,7 @@
         </div>
         <h2 style="font-family:'Plus Jakarta Sans',sans-serif; font-size:1.12rem; color:#0F172A; margin-bottom:0.35rem;">Dashboard Comercial Regional</h2>
         <p id="evo-auth-subtitle" style="font-size:0.81rem; color:#475569; line-height:1.45; margin-bottom:1.25rem;">
-            Acesso restrito a colaboradores ativos.<br>Entre com sua conta Google corporativa <b>@brasiltecpar.com.br</b>, <b>@evo.digital</b> ou <b>@sejaamigo.com.br</b>.
+            Acesso restrito a colaboradores ativos.<br>Entre com sua conta Google corporativa <b>@brasiltecpar.com.br</b>, <b>@evo.digital</b>, <b>@sejaamigo.com.br</b> ou <b>@avato.com.br</b>.
         </p>
 
         <div id="evo-auth-loading" style="display:none; padding:1rem 0; color:#0038A8; font-weight:600; font-size:0.84rem;">
@@ -1380,7 +1380,7 @@
                 <!-- CONTROLE DE SEGURANÇA CORPORATIVA & BLOQUEIO DE EX-COLABORADORES -->
                 <div class="p10-subpanel" style="background:#F8FAFC; border-radius:4px; border:1px solid #CBD5E1; border-left:3px solid var(--evo-navy); display:flex; flex-direction:column;">
                     <div style="font-size:0.68rem; font-weight:700; color:var(--evo-navy); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
-                        <span><i class="fa-solid fa-user-shield"></i> Segurança Corporativa (@brasiltecpar.com.br / @evo.digital / @sejaamigo.com.br)</span>
+                        <span><i class="fa-solid fa-user-shield"></i> Segurança Corporativa (@brasiltecpar.com.br / @evo.digital / @sejaamigo.com.br / @avato.com.br)</span>
                         <span id="sec-auth-mode-badge" class="badge badge-cyan" style="font-size:0.61rem; padding:1px 5px;"></span>
                     </div>
                     <div class="filter-bar">
@@ -1777,9 +1777,12 @@
     let currentVerifiedEmail = '';
     let pendingEmailLinkCompletion = false;
 
+    const ALLOWED_CORPORATE_DOMAINS = ['brasiltecpar.com.br', 'evo.digital', 'sejaamigo.com.br', 'avato.com.br'];
+
     function isValidCorporateEmail(email) {
         const clean = (email || '').trim().toLowerCase();
-        return /^[a-z0-9._%+-]+@(brasiltecpar\.com\.br|evo\.digital|sejaamigo\.com\.br)$/.test(clean);
+        const doms = ALLOWED_CORPORATE_DOMAINS.map(d => d.replace(/\./g, '\\.')).join('|');
+        return new RegExp('^[a-z0-9._%+-]+@(' + doms + ')$').test(clean);
     }
 
     function isEmailBlocked(email) {
@@ -2137,7 +2140,7 @@
                 <td><b>${idx + 1}</b></td>
                 <td class="left"><b>${r.name}</b></td>
                 <td class="left">${em}</td>
-                <td><span class="badge ${domain === '@evo.digital' ? 'badge-cyan' : (domain === '@sejaamigo.com.br' ? 'badge-gold' : 'badge-good')}">${domain}</span></td>
+                <td><span class="badge ${domain === '@evo.digital' ? 'badge-cyan' : (domain === '@sejaamigo.com.br' ? 'badge-gold' : (domain === '@avato.com.br' ? '' : 'badge-good'))}" ${domain === '@avato.com.br' ? 'style="background:#EDE9FE; color:#5B21B6; border:1px solid #DDD6FE;"' : ''}>${domain}</span></td>
                 <td><b>${r.accessTime}</b></td>
                 <td>${devIcon}</td>
                 <td><span class="badge badge-good"><i class="fa-solid fa-check"></i> Acessou</span></td>
@@ -2257,7 +2260,7 @@
         const email = (inp ? inp.value : '').replace(/\s+/g, '').toLowerCase();
 
         if (!isValidCorporateEmail(email)) {
-            showAuthGateMessage('Domínio não autorizado. Utilize um e-mail <b>@brasiltecpar.com.br</b>, <b>@evo.digital</b> ou <b>@sejaamigo.com.br</b>.', '');
+            showAuthGateMessage('Domínio não autorizado. Utilize um e-mail <b>@brasiltecpar.com.br</b>, <b>@evo.digital</b>, <b>@sejaamigo.com.br</b> ou <b>@avato.com.br</b>.', '');
             if (inp) inp.focus();
             return;
         }
@@ -2411,7 +2414,7 @@
                 localStorage.removeItem('evo_authorized_email');
                 localStorage.removeItem('evo_authorized_ts');
             } catch (ex) {}
-            lockScreenToAuthGate('A conta <b>' + email + '</b> não é permitida. Clique em <b>Entrar com o Google</b> e selecione seu e-mail <b>@brasiltecpar.com.br</b>, <b>@evo.digital</b> ou <b>@sejaamigo.com.br</b>.');
+            lockScreenToAuthGate('A conta <b>' + email + '</b> não é permitida. Clique em <b>Entrar com o Google</b> e selecione seu e-mail <b>@brasiltecpar.com.br</b>, <b>@evo.digital</b>, <b>@sejaamigo.com.br</b> ou <b>@avato.com.br</b>.');
             return false;
         }
         if (isEmailBlocked(email)) {
@@ -6434,7 +6437,7 @@
         const inp = document.getElementById('block-email-input');
         const em = (inp ? inp.value : '').trim().toLowerCase();
         if (!isValidCorporateEmail(em)) {
-            alert('Informe um e-mail válido (@brasiltecpar.com.br, @evo.digital ou @sejaamigo.com.br).');
+            alert('Informe um e-mail válido (@brasiltecpar.com.br, @evo.digital, @sejaamigo.com.br ou @avato.com.br).');
             return;
         }
         if (!Array.isArray(STATE.config.blockedEmails)) STATE.config.blockedEmails = [];
