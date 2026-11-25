@@ -797,7 +797,7 @@
         }
     
         /* ABA 1 & ABA 3 (VISÃO EXECUTIVA DA UNIDADE): MATRIZ EXECUTIVA & GRÁFICOS */
-        #p1, #p3-exec-wrap { gap: 0.55rem; }
+        #p1, #p3, #p3-exec-wrap { gap: 0.50rem; }
         #p1 .kpi-card, #p3-exec-wrap .kpi-card { padding: 0.44rem 0.76rem; }
         #p1 .kpi-value, #p3-exec-wrap .kpi-value { font-size: 1.28rem; }
         #p1 .card-box, #p3-exec-wrap .card-box { padding: 0.54rem 0.74rem; gap: 0.42rem; min-width: 0; }
@@ -1362,20 +1362,10 @@
         </div>
     </section>
 
-    <!-- ABA 3: UNIDADES -->
+    <!-- ABA 3: UNIDADES (PAINEL EXECUTIVO ONE-PAGE DIRETO POR UNIDADE) -->
     <section class="panel" id="p3">
-        <!-- MODO 1: TABELA GERAL DE TODAS AS UNIDADES -->
-        <div class="card-box" id="p3-table-card">
-            <div class="box-header">
-                <div class="box-title"><i class="fa-solid fa-store"></i> Performance Consolidada por Unidade & Mix de Canais <span style="font-size:0.68rem; font-weight:500; color:var(--text-muted);">(Clique em qualquer unidade para abrir os Gráficos & Net Adds)</span></div>
-                <div class="filter-bar" id="p3-unidades-controls"></div>
-            </div>
-            <div id="p3-unidades-table"></div>
-        </div>
-
-        <!-- MODO 2: PAINEL EXECUTIVO ONE-PAGE DA UNIDADE (IGUAL AO CONSOLIDADO) -->
-        <div id="p3-exec-wrap" style="display:none; flex-direction:column;">
-            <div class="card-box" style="padding:0.40rem 0.72rem; background:#EFF6FF; border-color:#BFDBFE;">
+        <div id="p3-exec-wrap" style="display:flex; flex-direction:column;">
+            <div class="card-box" style="padding:0.36rem 0.72rem; background:#EFF6FF; border-color:#BFDBFE;">
                 <div class="box-header">
                     <div class="filter-bar" id="p3-exec-nav-left" style="gap:6px;"></div>
                     <div class="filter-bar" id="p3-exec-nav-right" style="gap:6px;">
@@ -1398,13 +1388,13 @@
                             <button class="pill-btn" id="btn-p3-lens-netadds" onclick="setUnitExecLens('netadds')"><i class="fa-solid fa-scale-balanced"></i> Churn & Net Adds</button>
                         </div>
                     </div>
-                    <div style="height: 232px; position: relative;"><canvas id="chartUnidadeVendas"></canvas></div>
+                    <div style="height: 218px; position: relative;"><canvas id="chartUnidadeVendas"></canvas></div>
                 </div>
                 <div class="card-box">
                     <div class="box-header">
                         <div class="box-title" id="p3-chart2-title"><i class="fa-solid fa-chart-column"></i> Evolução Histórica & Projeção — Altas</div>
                     </div>
-                    <div style="height: 232px; position: relative;"><canvas id="chartUnidadeAltas"></canvas></div>
+                    <div style="height: 218px; position: relative;"><canvas id="chartUnidadeAltas"></canvas></div>
                 </div>
             </div>
 
@@ -3306,6 +3296,8 @@
         document.getElementById('p' + idx).classList.add('active');
         document.querySelectorAll('.tab-btn')[idx - 1].classList.add('active');
         syncHeaderContextualControls(idx);
+        if (idx === 1 && typeof renderConsolidado === 'function') renderConsolidado();
+        if (idx === 3 && typeof renderUnidades === 'function') renderUnidades();
         setTimeout(() => window.dispatchEvent(new Event('resize')), 40);
     }
 
@@ -4210,9 +4202,7 @@
         document.getElementById('p2-altas-table').innerHTML = buildMatrix(dailyAltas, hist.metasNov.fcAltas);
     }
 
-    let showHistUnidades = false;
-    let histUnidadesTimer = null;
-    let p3SelectedUnits = []; // [] = Tabela Geral | ['SPO'] ou ['SPO','GRS'] = Painel Executivo da Unidade
+    let p3SelectedUnits = []; // Inicializa automaticamente na 1ª unidade da regional ativa
     let p3UnitDuMode = 'abs'; // 'abs' | 'perDu'
     let p3UnitLens = 'comercial'; // 'comercial' | 'netadds'
     let p3UnitTableMetric = 'altas'; // 'altas' | 'vendas'
@@ -4245,25 +4235,6 @@
         p3SelectedUnits = [];
         p3ComboOpen = false;
         p3ComboSearch = '';
-    }
-
-    function toggleHistUnidades(forceState) {
-        if (typeof forceState === 'boolean') {
-            showHistUnidades = forceState;
-        } else {
-            showHistUnidades = !showHistUnidades;
-        }
-        if (histUnidadesTimer) {
-            clearTimeout(histUnidadesTimer);
-            histUnidadesTimer = null;
-        }
-        if (showHistUnidades) {
-            histUnidadesTimer = setTimeout(() => {
-                showHistUnidades = false;
-                renderUnidades();
-            }, 3600000);
-        }
-        renderUnidades();
     }
 
     function normalizeUnitKey(rawUnit) {
@@ -4316,8 +4287,11 @@
     function toggleMultiUnitExec(uKey, checked, ev) {
         if (ev) ev.stopPropagation();
         const set = new Set(p3SelectedUnits);
-        if (checked) set.add(uKey);
-        else set.delete(uKey);
+        if (checked) {
+            set.add(uKey);
+        } else {
+            if (set.size > 1) set.delete(uKey); // Mantém ao menos 1 unidade ativa
+        }
         p3SelectedUnits = Array.from(set);
         p3ComboOpen = true;
         renderUnidades();
@@ -4326,11 +4300,13 @@
         }, 10);
     }
 
-    function clearUnitExecSelection(ev) {
+    function resetToFirstUnitExec(firstKey, ev) {
         if (ev) ev.stopPropagation();
-        p3SelectedUnits = [];
+        p3SelectedUnits = firstKey ? [firstKey] : [];
+        p3ComboSearch = '';
         p3ComboOpen = false;
         renderUnidades();
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 30);
     }
 
     function selectAllFilteredUnitsExec(allUnitKeys, ev) {
@@ -4380,17 +4356,20 @@
         ensureChurnSkeleton();
         const regChurnUnits = (STATE.churn && STATE.churn[currentRegion] && STATE.churn[currentRegion].units) || {};
         const selCount = p3SelectedUnits.length;
-        let btnText = `<i class="fa-solid fa-magnifying-glass-chart" style="color:var(--evo-blue);"></i> <span>Selecionar Unidade (${unitOrder.length})...</span>`;
+        let btnText = `<i class="fa-solid fa-location-dot" style="color:var(--evo-cyan);"></i> <span>Selecionar Unidade (${unitOrder.length})...</span>`;
         if (selCount === 1) {
             const u0 = p3SelectedUnits[0];
             const lbl0 = (regUnitsHist[u0] && regUnitsHist[u0].label) ? regUnitsHist[u0].label : u0;
-            btnText = `<i class="fa-solid fa-location-dot" style="color:var(--evo-cyan);"></i> <span>Unidade: <b>${lbl0}</b></span>`;
+            btnText = `<i class="fa-solid fa-location-dot" style="color:var(--evo-cyan);"></i> <span><b>${lbl0}</b></span>`;
+        } else if (selCount > 1 && selCount === unitOrder.length) {
+            btnText = `<i class="fa-solid fa-layer-group" style="color:var(--evo-cyan);"></i> <span><b>Todas (${selCount} Unidades)</b></span>`;
         } else if (selCount > 1) {
             const shortList = p3SelectedUnits.slice(0, 3).join(' + ') + (selCount > 3 ? ` +${selCount - 3}` : '');
             btnText = `<i class="fa-solid fa-layer-group" style="color:var(--evo-cyan);"></i> <span>${selCount} Unid.: <b>${shortList}</b></span>`;
         }
 
         const encodedOrder = encodeURIComponent(JSON.stringify(unitOrder));
+        const encFirst = encodeURIComponent(unitOrder[0] || '');
         let itemsHtml = '';
         const qNorm = normName(p3ComboSearch);
 
@@ -4409,7 +4388,7 @@
 
             itemsHtml += `<div class="unit-combo-item ${isSel ? 'selected' : ''}" data-search="${searchStr.replace(/"/g, '&quot;')}" style="display:${dispStyle};" onclick="selectSingleUnitExec(decodeURIComponent('${encU}'), event)">
                 <div class="unit-combo-item-left">
-                    <input type="checkbox" ${isSel ? 'checked' : ''} title="Somar unidade na seleção múltipla" onclick="toggleMultiUnitExec(decodeURIComponent('${encU}'), this.checked, event)">
+                    <input type="checkbox" ${isSel ? 'checked' : ''} title="Marcar para somar múltiplas unidades" onclick="toggleMultiUnitExec(decodeURIComponent('${encU}'), this.checked, event)">
                     <span class="unit-combo-item-name" title="${lbl}">${lbl}</span>
                 </div>
                 <span class="unit-combo-item-meta">Alt: <b>${fmtInt(projA)}</b> • Net: <b style="color:${netClr};">${(netProj >= 0 ? '+' : '') + fmtInt(netProj)}</b></span>
@@ -4425,9 +4404,9 @@
                 <div class="unit-combo-search-box">
                     <input type="text" class="unit-combo-search-inp" placeholder="Buscar unidade em ${currentRegion} (ex: ${unitOrder[0] || 'SPO'})..." value="${p3ComboSearch.replace(/"/g, '&quot;')}" oninput="filterUnitComboItems(this.value)">
                     <div class="unit-combo-actions">
-                        <button type="button" class="unit-combo-link" onclick="selectAllFilteredUnitsExec(JSON.parse(decodeURIComponent('${encodedOrder}')), event)"><i class="fa-solid fa-check-double"></i> Somar Filtradas</button>
+                        <button type="button" class="unit-combo-link" onclick="selectAllFilteredUnitsExec(JSON.parse(decodeURIComponent('${encodedOrder}')), event)"><i class="fa-solid fa-check-double"></i> Somar Todas/Filtro</button>
                         <span style="color:var(--text-muted);">Clique = 1 un. | Caixa = somar</span>
-                        <button type="button" class="unit-combo-link" style="color:var(--red);" onclick="clearUnitExecSelection(event)"><i class="fa-solid fa-table-list"></i> Tabela Geral</button>
+                        <button type="button" class="unit-combo-link" style="color:var(--evo-navy);" onclick="resetToFirstUnitExec(decodeURIComponent('${encFirst}'), event)"><i class="fa-solid fa-rotate-left"></i> 1ª Unid.</button>
                     </div>
                 </div>
                 <div class="unit-combo-list">${itemsHtml}</div>
@@ -4455,15 +4434,13 @@
         const m1Du = duArr[m1Idx] || 22;
         const duTag = isPerDu ? ' / DU' : '';
 
-        // Filtra apenas unidades válidas da regional ativa
-        const validSel = p3SelectedUnits.filter(u => regUnitsHist[u] || uM[u]);
-        if (validSel.length === 0) {
-            p3SelectedUnits = [];
-            renderUnidades();
-            return;
+        let validSel = p3SelectedUnits.filter(u => regUnitsHist[u] || uM[u]);
+        if (validSel.length === 0 && unitOrder.length > 0) {
+            validSel = [unitOrder[0]];
+            p3SelectedUnits = [unitOrder[0]];
         }
+        if (validSel.length === 0) return;
 
-        // Atualiza botões de controle
         const bAbs = document.getElementById('btn-p3-du-abs');
         const bDu  = document.getElementById('btn-p3-du-perdu');
         if (bAbs) bAbs.classList.toggle('active', !isPerDu);
@@ -4479,17 +4456,18 @@
         if (bTAlt) bTAlt.classList.toggle('active', p3UnitTableMetric === 'altas');
         if (bTVnd) bTVnd.classList.toggle('active', p3UnitTableMetric === 'vendas');
 
-        // Monta barra superior com botão Voltar + Combobox + Setas Anterior/Próxima
         const navLeft = document.getElementById('p3-exec-nav-left');
         if (navLeft) {
             const comboHtml = buildUnitComboHTML(unitOrder, regUnitsHist, uM, du);
             const encodedOrder = encodeURIComponent(JSON.stringify(unitOrder));
             const curPos = validSel.length === 1 ? (unitOrder.indexOf(validSel[0]) + 1) : 0;
-            const posBadge = curPos > 0 ? `<span class="badge badge-cyan" style="font-size:0.66rem;">${curPos} / ${unitOrder.length} em ${currentRegion}</span>` : `<span class="badge badge-cyan" style="font-size:0.66rem;">${validSel.length} unidades somadas (${currentRegion})</span>`;
+            const posBadge = curPos > 0
+                ? `<span class="badge badge-cyan" style="font-size:0.66rem;">Unidade ${curPos} de ${unitOrder.length} (${currentRegion})</span>`
+                : `<span class="badge badge-cyan" style="font-size:0.66rem;">${validSel.length === unitOrder.length ? `Todas as ${unitOrder.length} unidades (${currentRegion})` : `${validSel.length} unidades somadas (${currentRegion})`}</span>`;
             navLeft.innerHTML = `
-                <button type="button" class="btn primary" style="padding:4px 10px; font-size:0.72rem;" onclick="clearUnitExecSelection(event)">
-                    <i class="fa-solid fa-arrow-left"></i> Todas as Unidades
-                </button>
+                <span style="font-family:var(--font-hdr); font-size:0.76rem; font-weight:700; color:var(--evo-navy); display:inline-flex; align-items:center; gap:5px;">
+                    <i class="fa-solid fa-store" style="color:var(--evo-blue);"></i> Unidade:
+                </span>
                 ${comboHtml}
                 <button type="button" class="unit-nav-btn" title="Unidade Anterior" onclick="stepUnitExecSelection(-1, JSON.parse(decodeURIComponent('${encodedOrder}')))"><i class="fa-solid fa-chevron-left"></i></button>
                 <button type="button" class="unit-nav-btn" title="Próxima Unidade" onclick="stepUnitExecSelection(1, JSON.parse(decodeURIComponent('${encodedOrder}')))"><i class="fa-solid fa-chevron-right"></i></button>
@@ -4497,7 +4475,6 @@
             `;
         }
 
-        // Agrega dados históricos, metas/FC, realizado e churn das unidades selecionadas
         const uHistSynthetic = {
             meses: [...meses],
             vendas: Object.fromEntries(channels.map(c => [c, Array(nM).fill(0)])),
@@ -4565,7 +4542,10 @@
             }
         });
 
-        const unitTitleLabel = labelsSelected.length <= 3 ? labelsSelected.join(' + ') : `${labelsSelected.slice(0, 2).join(' + ')} (+${labelsSelected.length - 2})`;
+        const isAllUnitsSelected = (validSel.length > 1 && validSel.length === unitOrder.length);
+        const unitTitleLabel = isAllUnitsSelected
+            ? `TODAS UNID. ${currentRegion}`
+            : (labelsSelected.length <= 3 ? labelsSelected.join(' + ') : `${labelsSelected.slice(0, 2).join(' + ')} (+${labelsSelected.length - 2})`);
         const netAddsHist = Array.from({ length: nM }, (_, i) => uHistSynthetic.realAltasHist[i] - churnHist[i]);
 
         const totV = channels.reduce((s, c) => s + realVendas[c], 0);
@@ -4809,7 +4789,6 @@
         meses.forEach((m, idx) => hNet += `<th class="hist-col ${idx === meses.length - 1 ? 'grp-sep' : ''}">${m}</th>`);
         hNet += `<th>Altas Proj.</th><th class="grp-sep">Churn Proj.</th><th>Net Adds Proj.</th><th class="grp-sep">M-1 Net</th><th>Efic. Altas/Vnd</th></tr></thead><tbody>`;
 
-        // Se múltiplas unidades estiverem somadas, mostra também cada unidade individual antes do consolidado
         if (validSel.length > 1) {
             validSel.forEach(u => {
                 const uObj = regUnitsHist[u];
@@ -4868,17 +4847,8 @@
     function renderUnidades() {
         const { du, blReg } = getRegionMetrics();
         const hist = STATE.historico[currentRegion];
-        const meses = hist.meses || [];
-        const totalMeses = meses.length;
-        const m1Index = Math.max(0, totalMeses - 1);
-        const mesAtualNome = (STATE.config.mesVigente || 'Novembro/26').split('/')[0].slice(0, 3);
-        const mesM1Nome = meses[m1Index] || 'M-1';
+        const meses = (hist && hist.meses) || [];
 
-        const firstHistMes = meses[0] || 'Jan';
-        const prevHistMes = m1Index > 0 ? meses[m1Index - 1] : firstHistMes;
-        const rangeLabel = m1Index > 0 ? `${firstHistMes}–${prevHistMes}` : 'Anterior';
-
-        // Agrega realizado atual por unidade e canal na regional ativa
         const uM = {};
         blReg.forEach(r => {
             if (r[3] !== currentRegion) return;
@@ -4914,199 +4884,13 @@
             : Object.keys({ ...regUnitsHist, ...uM }).sort((a, b) => ((uM[b] && uM[b].a) || 0) - ((uM[a] && uM[a].a) || 0));
         const unitOrder = rawOrder.filter(u => regUnitsHist[u] || uM[u]);
 
-        const tblCard = document.getElementById('p3-table-card');
-        const execWrap = document.getElementById('p3-exec-wrap');
-
-        // Se houver unidade(s) selecionada(s), renderiza o Painel Executivo One-Page da Unidade
-        const activeUnitSel = p3SelectedUnits.filter(u => regUnitsHist[u] || uM[u]);
-        if (activeUnitSel.length > 0) {
-            if (tblCard) tblCard.style.display = 'none';
-            if (execWrap) execWrap.style.display = 'flex';
-            renderUnitExecutivePanel(unitOrder, regUnitsHist, uM, du, meses);
-            return;
+        let activeUnitSel = p3SelectedUnits.filter(u => regUnitsHist[u] || uM[u]);
+        if (activeUnitSel.length === 0 && unitOrder.length > 0) {
+            activeUnitSel = [unitOrder[0]];
+            p3SelectedUnits = [unitOrder[0]];
         }
 
-        if (tblCard) tblCard.style.display = 'flex';
-        if (execWrap) execWrap.style.display = 'none';
-
-        const ctrlEl = document.getElementById('p3-unidades-controls');
-        if (ctrlEl) {
-            const comboHtml = buildUnitComboHTML(unitOrder, regUnitsHist, uM, du);
-            ctrlEl.innerHTML = `
-                ${comboHtml}
-                <span style="font-size:0.71rem; color:var(--text-muted); font-weight:500;">
-                    <i class="fa-solid fa-eye-slash"></i> ${showHistUnidades ? `Histórico (${firstHistMes}–${mesM1Nome})` : `M-1 (${mesM1Nome}) visível`}
-                </span>
-                <button class="pill-btn ${showHistUnidades ? 'active' : ''}" onclick="toggleHistUnidades()">
-                    <i class="fa-solid ${showHistUnidades ? 'fa-compress' : 'fa-clock-rotate-left'}"></i>
-                    ${showHistUnidades ? `Ocultar (${rangeLabel})` : `Histórico (${rangeLabel})`}
-                </button>
-            `;
-        }
-
-        const histColsCount = showHistUnidades ? totalMeses : 1;
-        const blockSpan = histColsCount + 6;
-
-        let h = `<div class="units-scroll-wrap"><table class="tbl-unidades"><thead>
-            <tr>
-                <th rowspan="2" class="left sticky-col">Local (Área)</th>
-                <th class="block-gap" rowspan="2"></th>
-                <th colspan="${blockSpan}" class="th-vendas-grp">VENDAS</th>
-                <th class="block-gap" rowspan="2"></th>
-                <th colspan="${blockSpan}" class="th-altas-grp">ALTAS</th>
-                <th class="block-gap" rowspan="2"></th>
-                <th rowspan="2" style="background:#DCE7F5;">Efic.</th>
-            </tr>
-            <tr>`;
-
-        if (showHistUnidades) {
-            for (let idx = 0; idx < m1Index; idx++) {
-                h += `<th class="th-vendas-sub th-hist-mes">${meses[idx]}</th>`;
-            }
-        }
-        h += `<th class="th-vendas-sub th-hist-mes">${mesM1Nome}</th>`;
-        h += `<th class="th-vendas-sub col-kpi-std">Meta<br>${mesAtualNome}</th><th class="th-vendas-sub col-kpi-std">FC<br>${mesAtualNome}</th><th class="th-vendas-sub col-kpi-std">Real</th><th class="th-vendas-sub col-kpi-std">Proj.</th><th class="th-vendas-sub col-kpi-pct">% Proj.</th><th class="th-vendas-sub col-kpi-pct">M-1</th>`;
-
-        if (showHistUnidades) {
-            for (let idx = 0; idx < m1Index; idx++) {
-                h += `<th class="th-altas-sub th-hist-mes">${meses[idx]}</th>`;
-            }
-        }
-        h += `<th class="th-altas-sub th-hist-mes">${mesM1Nome}</th>`;
-        h += `<th class="th-altas-sub col-kpi-std">Meta<br>${mesAtualNome}</th><th class="th-altas-sub col-kpi-std">FC<br>${mesAtualNome}</th><th class="th-altas-sub col-kpi-std">Real</th><th class="th-altas-sub col-kpi-std">Proj.</th><th class="th-altas-sub col-kpi-pct">% Proj.</th><th class="th-altas-sub col-kpi-pct">M-1</th>`;
-
-        h += `</tr></thead><tbody>`;
-
-        const cList = ['Inside Sales', 'Digital', 'Lojas', 'PaP', 'AA'];
-        const histChMap = {
-            'Inside Sales': 'Inside Sales',
-            'Digital': 'Digital',
-            'Lojas': 'Lojas',
-            'PaP': 'PaP Próprio',
-            'AA': 'AA'
-        };
-
-        unitOrder.forEach(u => {
-            const uHistObj = regUnitsHist[u];
-            const curU = uM[u] || {
-                v: 0, a: 0,
-                c: {
-                    'Inside Sales': { v: 0, a: 0 },
-                    'Digital':      { v: 0, a: 0 },
-                    'Lojas':        { v: 0, a: 0 },
-                    'PaP':          { v: 0, a: 0 },
-                    'AA':           { v: 0, a: 0 }
-                }
-            };
-            if (!uHistObj && !uM[u]) return;
-
-            const g = uHistObj ? uHistObj.Geral : {
-                V_Hist: Array(totalMeses).fill(0),
-                A_Hist: Array(totalMeses).fill(0),
-                V_Meta: 0, A_Meta: 0, V_FC: 0, A_FC: 0
-            };
-            const unitLabel = (uHistObj && uHistObj.label) ? uHistObj.label : u;
-            const encU = encodeURIComponent(u);
-
-            const vProj = curU.v * du.fator;
-            const aProj = curU.a * du.fator;
-            const vRef = g.V_FC > 0 ? g.V_FC : g.V_Meta;
-            const aRef = g.A_FC > 0 ? g.A_FC : g.A_Meta;
-            const vPct = vRef > 0 ? (vProj / vRef) * 100 : 0;
-            const aPct = aRef > 0 ? (aProj / aRef) * 100 : 0;
-            const vOut = g.V_Hist[m1Index] || 0;
-            const aOut = g.A_Hist[m1Index] || 0;
-            const vM1 = vOut > 0 ? ((vProj / vOut) - 1) * 100 : 0;
-            const aM1 = aOut > 0 ? ((aProj / aOut) - 1) * 100 : 0;
-            const ef = curU.v > 0 ? (curU.a / curU.v) * 100 : 0;
-
-            h += `<tr class="row-total row-unit-hdr unit-clickable-row" onclick="selectSingleUnitExec(decodeURIComponent('${encU}'), event)" title="Clique para abrir o Painel Executivo de ${unitLabel} (Gráficos, Churn, Net Adds e Matriz)">
-                <td class="left sticky-col"><b>${unitLabel}</b><span class="unit-drill-icon"><i class="fa-solid fa-chart-column"></i></span></td>
-                <td class="block-gap"></td>`;
-
-            for (let idx = 0; idx <= m1Index; idx++) {
-                if (!showHistUnidades && idx < m1Index) continue;
-                h += `<td class="hist-col">${fmtInt(g.V_Hist[idx])}</td>`;
-            }
-            h += `<td class="col-kpi-std">${g.V_Meta > 0 ? fmtInt(g.V_Meta) : '-'}</td>
-                  <td class="col-kpi-std">${g.V_FC > 0 ? fmtInt(g.V_FC) : '-'}</td>
-                  <td class="col-kpi-std"><b>${fmtInt(curU.v)}</b></td>
-                  <td class="col-kpi-std" style="color:var(--evo-navy);font-weight:700">${fmtInt(vProj)}</td>
-                  <td class="col-kpi-pct ${vRef > 0 ? (vPct >= 100 ? 'val-green' : 'val-red') : ''}">${vRef > 0 ? fmtPct(vPct) : '-'}</td>
-                  <td class="col-kpi-pct ${vOut > 0 ? (vM1 >= 0 ? 'val-green' : 'val-red') : ''}">${vOut > 0 ? (vM1 >= 0 ? '+' : '') + fmtPct(vM1) : '-'}</td>
-                  <td class="block-gap"></td>`;
-
-            for (let idx = 0; idx <= m1Index; idx++) {
-                if (!showHistUnidades && idx < m1Index) continue;
-                h += `<td class="hist-col">${fmtInt(g.A_Hist[idx])}</td>`;
-            }
-            h += `<td class="col-kpi-std">${g.A_Meta > 0 ? fmtInt(g.A_Meta) : '-'}</td>
-                  <td class="col-kpi-std">${g.A_FC > 0 ? fmtInt(g.A_FC) : '-'}</td>
-                  <td class="col-kpi-std"><b>${fmtInt(curU.a)}</b></td>
-                  <td class="col-kpi-std" style="color:var(--evo-navy);font-weight:700">${fmtInt(aProj)}</td>
-                  <td class="col-kpi-pct ${aRef > 0 ? (aPct >= 100 ? 'val-green' : 'val-red') : ''}">${aRef > 0 ? fmtPct(aPct) : '-'}</td>
-                  <td class="col-kpi-pct ${aOut > 0 ? (aM1 >= 0 ? 'val-green' : 'val-red') : ''}">${aOut > 0 ? (aM1 >= 0 ? '+' : '') + fmtPct(aM1) : '-'}</td>
-                  <td class="block-gap"></td>
-                  <td class="col-kpi-pct ${curU.v > 0 ? getEficClass(ef) : ''}">${curU.v > 0 ? fmtPct(ef) : '-'}</td>
-            </tr>`;
-
-            const cData = uHistObj ? uHistObj.Canais : {};
-            cList.forEach(ch => {
-                const histChKey = histChMap[ch];
-                const chHist = cData[histChKey] || {
-                    V_Hist: Array(totalMeses).fill(0),
-                    A_Hist: Array(totalMeses).fill(0),
-                    V_Meta: 0, A_Meta: 0, V_FC: 0, A_FC: 0
-                };
-                const curCh = curU.c[ch] || { v: 0, a: 0 };
-
-                const cvProj = curCh.v * du.fator;
-                const caProj = curCh.a * du.fator;
-                const cvRef = chHist.V_FC > 0 ? chHist.V_FC : chHist.V_Meta;
-                const caRef = chHist.A_FC > 0 ? chHist.A_FC : chHist.A_Meta;
-                const cvPct = cvRef > 0 ? (cvProj / cvRef) * 100 : 0;
-                const caPct = caRef > 0 ? (caProj / caRef) * 100 : 0;
-                const cvOut = chHist.V_Hist[m1Index] || 0;
-                const caOut = chHist.A_Hist[m1Index] || 0;
-                const cvM1 = cvOut > 0 ? ((cvProj / cvOut) - 1) * 100 : 0;
-                const caM1 = caOut > 0 ? ((caProj / caOut) - 1) * 100 : 0;
-                const cef = curCh.v > 0 ? (curCh.a / curCh.v) * 100 : 0;
-                const showName = (ch === 'PaP') ? 'PaP Próprio' : ch;
-
-                h += `<tr>
-                    <td class="left sticky-col" title="${showName}">${showName}</td>
-                    <td class="block-gap"></td>`;
-
-                for (let idx = 0; idx <= m1Index; idx++) {
-                    if (!showHistUnidades && idx < m1Index) continue;
-                    h += `<td class="hist-col">${fmtInt(chHist.V_Hist[idx])}</td>`;
-                }
-                h += `<td class="col-kpi-std">${chHist.V_Meta > 0 ? fmtInt(chHist.V_Meta) : '-'}</td>
-                      <td class="col-kpi-std">${chHist.V_FC > 0 ? fmtInt(chHist.V_FC) : '-'}</td>
-                      <td class="col-kpi-std">${fmtInt(curCh.v)}</td>
-                      <td class="col-kpi-std" style="color:var(--evo-blue);font-weight:700">${fmtInt(cvProj)}</td>
-                      <td class="col-kpi-pct ${cvRef > 0 ? (cvPct >= 100 ? 'val-green' : 'val-red') : ''}">${cvRef > 0 ? fmtPct(cvPct) : '-'}</td>
-                      <td class="col-kpi-pct ${cvOut > 0 ? (cvM1 >= 0 ? 'val-green' : 'val-red') : ''}">${cvOut > 0 ? (cvM1 >= 0 ? '+' : '') + fmtPct(cvM1) : '-'}</td>
-                      <td class="block-gap"></td>`;
-
-                for (let idx = 0; idx <= m1Index; idx++) {
-                    if (!showHistUnidades && idx < m1Index) continue;
-                    h += `<td class="hist-col">${fmtInt(chHist.A_Hist[idx])}</td>`;
-                }
-                h += `<td class="col-kpi-std">${chHist.A_Meta > 0 ? fmtInt(chHist.A_Meta) : '-'}</td>
-                      <td class="col-kpi-std">${chHist.A_FC > 0 ? fmtInt(chHist.A_FC) : '-'}</td>
-                      <td class="col-kpi-std"><b>${fmtInt(curCh.a)}</b></td>
-                      <td class="col-kpi-std" style="color:var(--evo-blue);font-weight:700">${fmtInt(caProj)}</td>
-                      <td class="col-kpi-pct ${caRef > 0 ? (caPct >= 100 ? 'val-green' : 'val-red') : ''}">${caRef > 0 ? fmtPct(caPct) : '-'}</td>
-                      <td class="col-kpi-pct ${caOut > 0 ? (caM1 >= 0 ? 'val-green' : 'val-red') : ''}">${caOut > 0 ? (caM1 >= 0 ? '+' : '') + fmtPct(caM1) : '-'}</td>
-                      <td class="block-gap"></td>
-                      <td class="col-kpi-pct ${curCh.v > 0 ? getEficClass(cef) : ''}">${curCh.v > 0 ? fmtPct(cef) : '-'}</td>
-                </tr>`;
-            });
-        });
-
-        h += `</tbody></table></div>`;
-        document.getElementById('p3-unidades-table').innerHTML = h;
+        renderUnitExecutivePanel(unitOrder, regUnitsHist, uM, du, meses);
     }
 
     let showHistCanais = false;
@@ -8100,8 +7884,7 @@
         // 3. Limpar inputs, seletores de unidade e tabelas restritas do DOM exportado
         if (cloneDoc.querySelector('#bi-paste-area')) cloneDoc.querySelector('#bi-paste-area').value = '';
         if (cloneDoc.querySelector('#churn-paste-area')) cloneDoc.querySelector('#churn-paste-area').value = '';
-        if (cloneDoc.querySelector('#p3-table-card')) cloneDoc.querySelector('#p3-table-card').style.display = 'flex';
-        if (cloneDoc.querySelector('#p3-exec-wrap')) cloneDoc.querySelector('#p3-exec-wrap').style.display = 'none';
+        if (cloneDoc.querySelector('#p3-exec-wrap')) cloneDoc.querySelector('#p3-exec-wrap').style.display = 'flex';
         if (cloneDoc.querySelector('#import-feedback')) cloneDoc.querySelector('#import-feedback').textContent = '';
         if (cloneDoc.querySelector('#p10-agents-crud')) cloneDoc.querySelector('#p10-agents-crud').innerHTML = '';
         if (cloneDoc.querySelector('#p10-aa-crud')) cloneDoc.querySelector('#p10-aa-crud').innerHTML = '';
@@ -8767,7 +8550,6 @@
             });
         });
 
-        showHistUnidades = false;
         showHistCanais = false;
         showHistMovel = false;
         syncAllAgentGoalsFromMatrix();
