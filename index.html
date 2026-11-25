@@ -17,6 +17,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
     <style>
         :root {
@@ -795,22 +796,150 @@
             white-space: nowrap;
         }
     
-        /* ABA 1: MATRIZ EXECUTIVA COM PRESENCIAL VS REMOTO & PESOS */
-        #p1 { gap: 0.55rem; }
-        #p1 .kpi-card { padding: 0.44rem 0.76rem; }
-        #p1 .kpi-value { font-size: 1.28rem; }
-        #p1 .card-box { padding: 0.54rem 0.74rem; gap: 0.42rem; min-width: 0; }
-        #p1 .box-title { font-size: 0.83rem; }
-        #p1 .charts-duo-grid {
+        /* ABA 1 & ABA 3 (VISÃO EXECUTIVA DA UNIDADE): MATRIZ EXECUTIVA & GRÁFICOS */
+        #p1, #p3-exec-wrap { gap: 0.55rem; }
+        #p1 .kpi-card, #p3-exec-wrap .kpi-card { padding: 0.44rem 0.76rem; }
+        #p1 .kpi-value, #p3-exec-wrap .kpi-value { font-size: 1.28rem; }
+        #p1 .card-box, #p3-exec-wrap .card-box { padding: 0.54rem 0.74rem; gap: 0.42rem; min-width: 0; }
+        #p1 .box-title, #p3-exec-wrap .box-title { font-size: 0.83rem; }
+        #p1 .charts-duo-grid, #p3-exec-wrap .charts-duo-grid {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             gap: 0.65rem;
         }
-        #p1 .charts-duo-grid > .card-box {
+        #p1 .charts-duo-grid > .card-box, #p3-exec-wrap .charts-duo-grid > .card-box {
             min-width: 0;
             overflow: hidden;
         }
-        @media (max-width: 960px) { #p1 .charts-duo-grid { grid-template-columns: minmax(0, 1fr); } }
+        @media (max-width: 960px) {
+            #p1 .charts-duo-grid, #p3-exec-wrap .charts-duo-grid { grid-template-columns: minmax(0, 1fr); }
+        }
+
+        /* SELETOR COMBOBOX INTELIGENTE DE UNIDADES (BUSCA + MULTI-SELEÇÃO + DRILL-DOWN) */
+        .unit-combo-wrap { position: relative; display: inline-flex; align-items: center; }
+        .unit-combo-btn {
+            background: #FFFFFF;
+            border: 1.5px solid var(--evo-blue);
+            color: var(--evo-navy);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: var(--font-hdr);
+            font-size: 0.73rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            min-width: 225px;
+            max-width: 320px;
+            box-shadow: 0 1px 2px rgba(0, 27, 94, 0.08);
+            transition: 0.15s;
+        }
+        .unit-combo-btn:hover { background: #F0F7FF; border-color: var(--evo-cyan); }
+        .unit-combo-menu {
+            position: absolute;
+            top: calc(100% + 5px);
+            left: 0;
+            width: 320px;
+            background: #FFFFFF;
+            border: 1px solid #9EB3CC;
+            border-radius: 7px;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.18);
+            z-index: 95;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .unit-combo-menu.open { display: flex; }
+        .unit-combo-search-box {
+            padding: 7px 8px;
+            background: #F1F5F9;
+            border-bottom: 1px solid var(--border-col);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .unit-combo-search-box input {
+            width: 100%;
+            padding: 5px 8px;
+            font-size: 0.73rem;
+            border: 1px solid #94A3B8;
+            border-radius: 5px;
+            outline: none;
+        }
+        .unit-combo-search-box input:focus { border-color: var(--evo-blue); box-shadow: 0 0 0 2px rgba(0, 56, 168, 0.12); }
+        .unit-combo-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.65rem;
+            gap: 6px;
+        }
+        .unit-combo-link {
+            background: none;
+            border: none;
+            color: var(--evo-blue);
+            font-weight: 700;
+            cursor: pointer;
+            padding: 1px 3px;
+            font-size: 0.65rem;
+        }
+        .unit-combo-link:hover { text-decoration: underline; }
+        .unit-combo-list {
+            max-height: 255px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .unit-combo-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px 9px;
+            border-bottom: 1px solid #F1F5F9;
+            font-size: 0.71rem;
+            cursor: pointer;
+            gap: 6px;
+            transition: background 0.12s;
+        }
+        .unit-combo-item:hover { background: #EBF3FE; }
+        .unit-combo-item.selected { background: #DBEAFE; font-weight: 700; }
+        .unit-combo-item-left { display: flex; align-items: center; gap: 7px; min-width: 0; flex: 1; }
+        .unit-combo-item-left input[type="checkbox"] { cursor: pointer; accent-color: var(--evo-blue); width: 14px; height: 14px; flex-shrink: 0; }
+        .unit-combo-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--evo-navy); font-weight: 600; flex: 1; }
+        .unit-combo-item-meta { font-size: 0.63rem; color: var(--text-muted); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+        .unit-nav-btn {
+            background: #E2E8F0;
+            border: 1px solid #CBD5E1;
+            color: var(--evo-navy);
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: 0.15s;
+        }
+        .unit-nav-btn:hover { background: #CBD5E1; }
+        table.tbl-unidades tr.row-unit-hdr.unit-clickable-row { cursor: pointer; }
+        table.tbl-unidades tr.row-unit-hdr.unit-clickable-row:hover td,
+        table.tbl-unidades tr.row-unit-hdr.unit-clickable-row:hover td.sticky-col {
+            background: #9CC0EE !important;
+        }
+        .unit-drill-icon {
+            font-size: 0.60rem;
+            color: var(--evo-blue);
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid rgba(0, 56, 168, 0.25);
+            border-radius: 3px;
+            padding: 0px 4px;
+            margin-left: 5px;
+            font-weight: 700;
+            vertical-align: middle;
+        }
 
         table.tbl-exec-matrix {
             width: 100%;
@@ -1235,12 +1364,60 @@
 
     <!-- ABA 3: UNIDADES -->
     <section class="panel" id="p3">
-        <div class="card-box">
+        <!-- MODO 1: TABELA GERAL DE TODAS AS UNIDADES -->
+        <div class="card-box" id="p3-table-card">
             <div class="box-header">
-                <div class="box-title"><i class="fa-solid fa-store"></i> Performance Consolidada por Unidade & Mix de Canais</div>
+                <div class="box-title"><i class="fa-solid fa-store"></i> Performance Consolidada por Unidade & Mix de Canais <span style="font-size:0.68rem; font-weight:500; color:var(--text-muted);">(Clique em qualquer unidade para abrir os Gráficos & Net Adds)</span></div>
                 <div class="filter-bar" id="p3-unidades-controls"></div>
             </div>
             <div id="p3-unidades-table"></div>
+        </div>
+
+        <!-- MODO 2: PAINEL EXECUTIVO ONE-PAGE DA UNIDADE (IGUAL AO CONSOLIDADO) -->
+        <div id="p3-exec-wrap" style="display:none; flex-direction:column;">
+            <div class="card-box" style="padding:0.40rem 0.72rem; background:#EFF6FF; border-color:#BFDBFE;">
+                <div class="box-header">
+                    <div class="filter-bar" id="p3-exec-nav-left" style="gap:6px;"></div>
+                    <div class="filter-bar" id="p3-exec-nav-right" style="gap:6px;">
+                        <div class="filter-bar" style="background:#FFFFFF; padding:2px; border-radius:6px; border:1px solid #CBD5E1; gap:2px;">
+                            <button class="pill-btn active" id="btn-p3-du-abs" style="padding:3px 9px; font-size:0.70rem;" onclick="setUnitExecDuMode('abs')">Volume Total</button>
+                            <button class="pill-btn" id="btn-p3-du-perdu" style="padding:3px 9px; font-size:0.70rem;" onclick="setUnitExecDuMode('perDu')">Média / DU</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="kpi-grid" id="p3-kpis"></div>
+
+            <div class="charts-duo-grid">
+                <div class="card-box">
+                    <div class="box-header">
+                        <div class="box-title" id="p3-chart1-title"><i class="fa-solid fa-chart-column"></i> Evolução Histórica & Projeção — Vendas</div>
+                        <div class="filter-bar">
+                            <button class="pill-btn active" id="btn-p3-lens-comercial" onclick="setUnitExecLens('comercial')">Vendas & Altas</button>
+                            <button class="pill-btn" id="btn-p3-lens-netadds" onclick="setUnitExecLens('netadds')"><i class="fa-solid fa-scale-balanced"></i> Churn & Net Adds</button>
+                        </div>
+                    </div>
+                    <div style="height: 232px; position: relative;"><canvas id="chartUnidadeVendas"></canvas></div>
+                </div>
+                <div class="card-box">
+                    <div class="box-header">
+                        <div class="box-title" id="p3-chart2-title"><i class="fa-solid fa-chart-column"></i> Evolução Histórica & Projeção — Altas</div>
+                    </div>
+                    <div style="height: 232px; position: relative;"><canvas id="chartUnidadeAltas"></canvas></div>
+                </div>
+            </div>
+
+            <div class="card-box">
+                <div class="box-header">
+                    <div class="box-title" id="p3-matrix-title"><i class="fa-solid fa-table"></i> Matriz Executiva por Canal & Presencial vs. Remoto</div>
+                    <div class="filter-bar" id="p3-matrix-controls">
+                        <button class="pill-btn active" id="btn-p3-tbl-altas" onclick="setUnitExecTableMetric('altas')">Visão Altas</button>
+                        <button class="pill-btn" id="btn-p3-tbl-vendas" onclick="setUnitExecTableMetric('vendas')">Visão Vendas</button>
+                    </div>
+                </div>
+                <div class="table-wrap" id="p3-exec-table"></div>
+            </div>
         </div>
     </section>
 
@@ -1865,14 +2042,98 @@
         }
     }
 
-    async function getFirebaseAuthQueryParam(hasExistingQuery) {
+    async function getFirebaseAuthQueryParam(hasExistingQuery, forceRefresh = false) {
         if (!firebaseAuthReady || !firebase.auth().currentUser) return '';
         try {
-            const token = await firebase.auth().currentUser.getIdToken();
+            const token = await firebase.auth().currentUser.getIdToken(!!forceRefresh);
             return token ? ((hasExistingQuery ? '&' : '?') + 'auth=' + encodeURIComponent(token)) : '';
         } catch (e) {
             return '';
         }
+    }
+
+    let firebaseDbListenerAttached = false;
+    let firebaseDbRefPath = '';
+    let localDirtySinceLastSync = false;
+    let pendingRemoteSnapshot = null;
+    let wakeupListenersBound = false;
+
+    function getFirebaseDbPath() {
+        const url = normalizeCloudUrl((STATE.config && STATE.config.cloudSyncUrl) || '');
+        if (!url) return '/evo';
+        const m = url.match(/^https?:\/\/[^\/]+(\/.*?)\.json$/i);
+        return (m && m[1]) ? m[1] : '/evo';
+    }
+
+    function isUserActivelyEditing() {
+        const ae = document.activeElement;
+        if (!ae || !ae.tagName) return false;
+        const tag = ae.tagName.toUpperCase();
+        if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') return false;
+        return !!(ae.closest && ae.closest('#p10-unlocked'));
+    }
+
+    function attachRealtimeDatabaseListener() {
+        if (typeof firebase === 'undefined' || typeof firebase.database !== 'function') return;
+        if (!ensureFirebaseInit()) return;
+        const cloudUrl = normalizeCloudUrl((STATE.config && STATE.config.cloudSyncUrl) || '');
+        if (!cloudUrl) return;
+        const dbPath = getFirebaseDbPath();
+        if (firebaseDbListenerAttached && firebaseDbRefPath === dbPath) return;
+
+        try {
+            if (firebaseDbListenerAttached && firebaseDbRefPath) {
+                firebase.database().ref(firebaseDbRefPath).off();
+            }
+            firebaseDbRefPath = dbPath;
+            firebaseDbListenerAttached = true;
+            firebase.database().ref(dbPath).on('value', (snapshot) => {
+                const remote = snapshot && snapshot.val ? snapshot.val() : null;
+                if (!remote || !remote.config) return;
+                if (isUserActivelyEditing()) {
+                    pendingRemoteSnapshot = remote;
+                    return;
+                }
+                applyRemoteState(remote, true);
+            }, (err) => {
+                console.warn('Firebase RTDB live listener fallback to polling:', err && err.message);
+                firebaseDbListenerAttached = false;
+            });
+        } catch (e) {
+            firebaseDbListenerAttached = false;
+        }
+    }
+
+    function bindRealtimeWakeupListeners() {
+        if (wakeupListenersBound) return;
+        wakeupListenersBound = true;
+
+        document.addEventListener('focusout', () => {
+            setTimeout(() => {
+                if (pendingRemoteSnapshot && !isUserActivelyEditing()) {
+                    const snap = pendingRemoteSnapshot;
+                    pendingRemoteSnapshot = null;
+                    applyRemoteState(snap, true);
+                }
+            }, 150);
+        });
+
+        const wakeHandler = () => {
+            if (!dashboardBooted) return;
+            try {
+                if (typeof firebase !== 'undefined' && typeof firebase.database === 'function' && firebase.apps && firebase.apps.length) {
+                    firebase.database().goOnline();
+                }
+            } catch (e) {}
+            attachRealtimeDatabaseListener();
+            checkLiveUpdates(false).catch(() => {});
+        };
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') wakeHandler();
+        });
+        window.addEventListener('focus', wakeHandler);
+        window.addEventListener('online', wakeHandler);
     }
 
     function showAuthGateMessage(errMsg, okMsg) {
@@ -2390,7 +2651,11 @@
     }
 
     async function bootDashboard() {
-        if (dashboardBooted) return;
+        if (dashboardBooted) {
+            attachRealtimeDatabaseListener();
+            checkLiveUpdates(true).catch(() => {});
+            return;
+        }
         dashboardBooted = true;
         adminUnlocked = false;
         const p10L = document.getElementById('p10-locked');
@@ -2400,6 +2665,7 @@
 
         restoreLocalStateCache();
         ensureRegionSkeletons();
+        ensureChurnSkeleton();
         mergeEmbeddedHistDefaults();
         normalizeLeaderCapacityState();
         syncAllAgentGoalsFromMatrix();
@@ -2407,18 +2673,16 @@
         try { openPanel(1); } catch (e) {}
         try { renderAll(); } catch (e) { console.error('Erro ao renderizar painéis:', e); }
 
+        bindRealtimeWakeupListeners();
+        attachRealtimeDatabaseListener();
+
         if (STATE.config.cloudSyncUrl) {
-            checkLiveUpdates().then(() => {
-                normalizeLeaderCapacityState();
-                syncAllAgentGoalsFromMatrix();
-            }).catch(() => {});
+            checkLiveUpdates(true).catch(() => {});
         }
 
         setInterval(async () => {
-            await checkLiveUpdates();
-            normalizeLeaderCapacityState();
-            syncAllAgentGoalsFromMatrix();
-        }, (STATE.config.cloudSyncUrl ? 6000 : 20000));
+            await checkLiveUpdates(false);
+        }, (STATE.config.cloudSyncUrl ? 4000 : 15000));
     }
 
     async function verifyActiveFirebaseUser(user, freshSignIn = false) {
@@ -2492,7 +2756,7 @@
     const metaTickPlugin = {
         id: 'metaTickPlugin',
         afterDatasetsDraw(chart) {
-            if (!chart.canvas.id.startsWith('chartConsolidado')) return;
+            if (!chart.canvas.id.startsWith('chartConsolidado') && !chart.canvas.id.startsWith('chartUnidade')) return;
             const metaDatasetIndex = chart.data.datasets.findIndex(d => d.isMetaTick);
             if (metaDatasetIndex === -1) return;
             const metaMeta = chart.getDatasetMeta(metaDatasetIndex);
@@ -2538,6 +2802,7 @@
     Chart.register(metaTickPlugin);
 
     const STATE = JSON.parse(document.getElementById('embedded-state').textContent);
+    const INITIAL_EMBEDDED_LAST_UPDATE = (STATE.config && STATE.config.lastUpdate) || '';
     const INITIAL_HISTORICO = JSON.parse(JSON.stringify(STATE.historico || {}));
     const INITIAL_UNITS_HIST = JSON.parse(JSON.stringify(STATE.unitsHist || {}));
     const INITIAL_MOVEL_HIST = JSON.parse(JSON.stringify(STATE.movelHist || {}));
@@ -2963,6 +3228,7 @@
             if (el) el.textContent = singleReg;
         });
 
+        if (typeof resetUnitExecOnRegionChange === 'function') resetUnitExecOnRegionChange();
         syncRegionButtonsUI();
         renderAll();
     }
@@ -2991,6 +3257,7 @@
             const el = document.getElementById(id);
             if (el) el.textContent = editReg;
         });
+        if (typeof resetUnitExecOnRegionChange === 'function') resetUnitExecOnRegionChange();
         syncRegionButtonsUI();
         renderAll();
     }
@@ -3234,13 +3501,14 @@
             if (Array.isArray(exactMetaArr) && exactMetaArr[i] !== undefined && exactMetaArr[i] !== null) {
                 return Number(exactMetaArr[i]);
             }
-            return totalsHistRaw[i] * 0.96;
+            return extraCtx.noFallbackMeta ? 0 : (totalsHistRaw[i] * 0.96);
         });
         const metasHist = metasHistRaw.map((v, i) => isPerDu ? +(v / duArr[i]).toFixed(2) : Math.round(v));
         const fcAtualRaw = metricKey === 'altas' ? fA : fV;
         const fcAtual = isPerDu ? +(fcAtualRaw / curDivisor).toFixed(2) : Math.round(fcAtualRaw);
         metasHist.push(fcAtual);
-        const projChartColor = projAtual >= fcAtual ? '#059669' : '#DC2626';
+        const hasAnyMetaInChart = metasHist.some(v => v != null && v > 0);
+        const projChartColor = fcAtual > 0 ? (projAtual >= fcAtual ? '#059669' : '#DC2626') : '#0038A8';
 
         const maxBarVal = Math.max(...totalsHist, projAtual, 1);
         const posMetas = metasHist.filter(v => v > 0).sort((a, b) => a - b);
@@ -3259,8 +3527,9 @@
         const projFontSize = +(9.5 * scaleFactor).toFixed(1);
         const tickFontSize = +(10.0 * scaleFactor).toFixed(1);
 
+        const hasHistMetaAt = (idx) => idx < totalsHist.length && metasHist[idx] > 0;
         const isHistBelowMeta = (idx) => {
-            if (idx >= totalsHist.length) return false;
+            if (!hasHistMetaAt(idx)) return false;
             return totalsHist[idx] < metasHist[idx];
         };
 
@@ -3295,9 +3564,9 @@
                             anchor: 'start',
                             align: 'top',
                             offset: 6,
-                            color: (ctx) => (ctx.dataIndex === labelsHist.length - 1) ? '#FFFFFF' : (isHistBelowMeta(ctx.dataIndex) ? '#991B1B' : '#166534'),
-                            backgroundColor: (ctx) => (ctx.dataIndex === labelsHist.length - 1) ? 'transparent' : (isHistBelowMeta(ctx.dataIndex) ? '#FEE2E2' : '#DCFCE7'),
-                            borderColor: (ctx) => (ctx.dataIndex === labelsHist.length - 1) ? 'transparent' : (isHistBelowMeta(ctx.dataIndex) ? '#FCA5A5' : '#86EFAC'),
+                            color: (ctx) => (ctx.dataIndex === labelsHist.length - 1) ? '#FFFFFF' : (!hasHistMetaAt(ctx.dataIndex) ? '#0F172A' : (isHistBelowMeta(ctx.dataIndex) ? '#991B1B' : '#166534')),
+                            backgroundColor: (ctx) => (ctx.dataIndex === labelsHist.length - 1) ? 'transparent' : (!hasHistMetaAt(ctx.dataIndex) ? '#F1F5F9' : (isHistBelowMeta(ctx.dataIndex) ? '#FEE2E2' : '#DCFCE7')),
+                            borderColor: (ctx) => (ctx.dataIndex === labelsHist.length - 1) ? 'transparent' : (!hasHistMetaAt(ctx.dataIndex) ? '#CBD5E1' : (isHistBelowMeta(ctx.dataIndex) ? '#FCA5A5' : '#86EFAC')),
                             borderWidth: (ctx) => (ctx.dataIndex === labelsHist.length - 1) ? 0 : 1,
                             borderRadius: 3,
                             padding: (ctx) => (ctx.dataIndex === labelsHist.length - 1) ? 0 : { top: 1, bottom: 1, left: 2.5, right: 2.5 },
@@ -3398,6 +3667,7 @@
                     legend: {
                         position: 'bottom',
                         labels: {
+                            filter: (legItem) => hasAnyMetaInChart || !String(legItem.text || '').includes('Meta'),
                             boxWidth: 11,
                             boxHeight: 11,
                             padding: 10,
@@ -3428,7 +3698,7 @@
         });
     }
 
-    function buildNetAddsCharts(du, hist, churnHist, churnProjAtual, netAddsHist, pa, isPerDu) {
+    function renderNetAddsPairCharts(c1Id, c2Id, prevObj1, prevObj2, du, hist, churnHist, churnProjAtual, netAddsHist, pa, isPerDu) {
         const meses = hist.meses || [];
         const nM = meses.length;
         const duArr = getHistDuArray(nM, du.duTotal);
@@ -3436,7 +3706,6 @@
 
         const labels = [...meses, 'Mês Atual'];
 
-        // Chart 1: Altas vs Churn (Barras comparativas)
         const altasHistDisp = meses.map((_, i) => {
             const v = Number(hist.realAltasHist[i] || 0);
             return isPerDu ? +(v / duArr[i]).toFixed(2) : Math.round(v);
@@ -3447,16 +3716,16 @@
             const v = Number(churnHist[i] || 0);
             return isPerDu ? +(v / duArr[i]).toFixed(2) : Math.round(v);
         });
-        // Projeção de Churn já é valor final carregado (sem multiplicar por fator DU)
         const churnAtualDisp = isPerDu ? +(churnProjAtual / curDivisor).toFixed(2) : Math.round(churnProjAtual);
 
         const maxAltChurn = Math.max(...altasHistDisp, altasAtualDisp, ...churnHistDisp, churnAtualDisp, 1);
         const yMax1 = +(maxAltChurn * 1.24).toFixed(2);
 
-        const c1El = document.getElementById('chartConsolidadoVendas');
-        if (chartConsolidadoVendasObj) chartConsolidadoVendasObj.destroy();
+        let nextObj1 = null;
+        const c1El = document.getElementById(c1Id);
+        if (prevObj1) prevObj1.destroy();
         if (c1El) {
-            chartConsolidadoVendasObj = new Chart(c1El, {
+            nextObj1 = new Chart(c1El, {
                 type: 'bar',
                 data: {
                     labels,
@@ -3510,13 +3779,12 @@
                     },
                     scales: {
                         x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 0, font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", size: 9.5, weight: '700' }, color: '#1E293B' } },
-                        y: { display: false, max: yMax1 }
+                        y: { display: false, min: 0, max: yMax1 }
                     }
                 }
             });
         }
 
-        // Chart 2: Evolução Net Adds (Saldo Líquido: Altas - Churn)
         const netProjRaw = pa - churnProjAtual;
         const netHistDisp = meses.map((_, i) => {
             const v = Number(netAddsHist[i] || 0);
@@ -3526,12 +3794,13 @@
         const allNetVals = [...netHistDisp, netProjDisp];
         const minNet = Math.min(...allNetVals, 0);
         const maxNet = Math.max(...allNetVals, 1);
-        const padSpan = Math.max(10, (maxNet - minNet) * 0.22);
+        const padSpan = Math.max(4, (maxNet - minNet) * 0.24);
 
-        const c2El = document.getElementById('chartConsolidadoAltas');
-        if (chartConsolidadoAltasObj) chartConsolidadoAltasObj.destroy();
+        let nextObj2 = null;
+        const c2El = document.getElementById(c2Id);
+        if (prevObj2) prevObj2.destroy();
         if (c2El) {
-            chartConsolidadoAltasObj = new Chart(c2El, {
+            nextObj2 = new Chart(c2El, {
                 type: 'bar',
                 data: {
                     labels,
@@ -3573,6 +3842,13 @@
                 }
             });
         }
+        return { chart1: nextObj1, chart2: nextObj2 };
+    }
+
+    function buildNetAddsCharts(du, hist, churnHist, churnProjAtual, netAddsHist, pa, isPerDu) {
+        const res = renderNetAddsPairCharts('chartConsolidadoVendas', 'chartConsolidadoAltas', chartConsolidadoVendasObj, chartConsolidadoAltasObj, du, hist, churnHist, churnProjAtual, netAddsHist, pa, isPerDu);
+        chartConsolidadoVendasObj = res.chart1;
+        chartConsolidadoAltasObj = res.chart2;
     }
 
     function renderConsolidado() {
@@ -3936,6 +4212,40 @@
 
     let showHistUnidades = false;
     let histUnidadesTimer = null;
+    let p3SelectedUnits = []; // [] = Tabela Geral | ['SPO'] ou ['SPO','GRS'] = Painel Executivo da Unidade
+    let p3UnitDuMode = 'abs'; // 'abs' | 'perDu'
+    let p3UnitLens = 'comercial'; // 'comercial' | 'netadds'
+    let p3UnitTableMetric = 'altas'; // 'altas' | 'vendas'
+    let p3ComboOpen = false;
+    let p3ComboSearch = '';
+    let chartUnidadeVendasObj = null;
+    let chartUnidadeAltasObj = null;
+    let p3OutsideClickBound = false;
+
+    function bindUnitComboOutsideClick() {
+        if (p3OutsideClickBound) return;
+        p3OutsideClickBound = true;
+        document.addEventListener('click', (ev) => {
+            if (!p3ComboOpen) return;
+            const wrap = ev.target && ev.target.closest ? ev.target.closest('.unit-combo-wrap') : null;
+            if (!wrap) {
+                p3ComboOpen = false;
+                document.querySelectorAll('.unit-combo-menu.open').forEach(el => el.classList.remove('open'));
+            }
+        });
+        document.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Escape' && p3ComboOpen) {
+                p3ComboOpen = false;
+                document.querySelectorAll('.unit-combo-menu.open').forEach(el => el.classList.remove('open'));
+            }
+        });
+    }
+
+    function resetUnitExecOnRegionChange() {
+        p3SelectedUnits = [];
+        p3ComboOpen = false;
+        p3ComboSearch = '';
+    }
 
     function toggleHistUnidades(forceState) {
         if (typeof forceState === 'boolean') {
@@ -3948,7 +4258,6 @@
             histUnidadesTimer = null;
         }
         if (showHistUnidades) {
-            // Oculta automaticamente após 1 hora (3.600.000 ms)
             histUnidadesTimer = setTimeout(() => {
                 showHistUnidades = false;
                 renderUnidades();
@@ -3958,11 +4267,602 @@
     }
 
     function normalizeUnitKey(rawUnit) {
-        let u = (rawUnit || 'OUTRAS').toUpperCase().trim();
+        let u = String(rawUnit || 'OUTRAS').replace(/\s+/g, ' ').toUpperCase().trim();
         u = u.replace(/^AMIGO\s+(CO|MS|MT|RJ|RS|SP)\s+/, '').trim();
-        if (u.startsWith('FAV')) return 'FAV';
-        if (u.startsWith('AUJ')) return 'AUJ';
+        if (u.startsWith('FAV') || u === 'POA') return 'FAV';
+        if (u.startsWith('AUJ') || u === 'MCZ') return 'AUJ';
+        if (u.startsWith('CBA FILIAL')) return 'CBA';
         return u;
+    }
+
+    function toggleUnitComboMenu(ev) {
+        if (ev) ev.stopPropagation();
+        bindUnitComboOutsideClick();
+        p3ComboOpen = !p3ComboOpen;
+        document.querySelectorAll('.unit-combo-menu').forEach(el => {
+            el.classList.toggle('open', p3ComboOpen);
+        });
+        if (p3ComboOpen) {
+            setTimeout(() => {
+                const visibleInp = Array.from(document.querySelectorAll('.unit-combo-search-inp')).find(i => i.offsetParent !== null);
+                if (visibleInp) {
+                    visibleInp.focus();
+                    visibleInp.select();
+                }
+            }, 30);
+        }
+    }
+
+    function filterUnitComboItems(val) {
+        p3ComboSearch = val || '';
+        const q = normName(p3ComboSearch);
+        document.querySelectorAll('.unit-combo-search-inp').forEach(inp => {
+            if (inp.value !== p3ComboSearch) inp.value = p3ComboSearch;
+        });
+        document.querySelectorAll('.unit-combo-item').forEach(item => {
+            const hay = normName(item.getAttribute('data-search') || '');
+            item.style.display = (!q || hay.includes(q)) ? 'flex' : 'none';
+        });
+    }
+
+    function selectSingleUnitExec(uKey, ev) {
+        if (ev) ev.stopPropagation();
+        p3SelectedUnits = [uKey];
+        p3ComboOpen = false;
+        renderUnidades();
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 30);
+    }
+
+    function toggleMultiUnitExec(uKey, checked, ev) {
+        if (ev) ev.stopPropagation();
+        const set = new Set(p3SelectedUnits);
+        if (checked) set.add(uKey);
+        else set.delete(uKey);
+        p3SelectedUnits = Array.from(set);
+        p3ComboOpen = true;
+        renderUnidades();
+        setTimeout(() => {
+            document.querySelectorAll('.unit-combo-menu').forEach(el => el.classList.add('open'));
+        }, 10);
+    }
+
+    function clearUnitExecSelection(ev) {
+        if (ev) ev.stopPropagation();
+        p3SelectedUnits = [];
+        p3ComboOpen = false;
+        renderUnidades();
+    }
+
+    function selectAllFilteredUnitsExec(allUnitKeys, ev) {
+        if (ev) ev.stopPropagation();
+        const q = normName(p3ComboSearch);
+        const regUnitsHist = (STATE.unitsHist && STATE.unitsHist[currentRegion]) || {};
+        const matched = allUnitKeys.filter(u => {
+            const lbl = (regUnitsHist[u] && regUnitsHist[u].label) ? regUnitsHist[u].label : u;
+            return !q || normName(u + ' ' + lbl).includes(q);
+        });
+        if (matched.length > 0) {
+            p3SelectedUnits = matched;
+            p3ComboOpen = false;
+            renderUnidades();
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 30);
+        }
+    }
+
+    function stepUnitExecSelection(delta, orderedUnits) {
+        if (!Array.isArray(orderedUnits) || orderedUnits.length === 0) return;
+        const cur = p3SelectedUnits[0] || orderedUnits[0];
+        let idx = orderedUnits.indexOf(cur);
+        if (idx === -1) idx = 0;
+        idx = (idx + delta + orderedUnits.length) % orderedUnits.length;
+        p3SelectedUnits = [orderedUnits[idx]];
+        p3ComboOpen = false;
+        renderUnidades();
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 30);
+    }
+
+    function setUnitExecDuMode(mode) {
+        p3UnitDuMode = (mode === 'perDu') ? 'perDu' : 'abs';
+        renderUnidades();
+    }
+
+    function setUnitExecLens(lens) {
+        p3UnitLens = (lens === 'netadds') ? 'netadds' : 'comercial';
+        renderUnidades();
+    }
+
+    function setUnitExecTableMetric(m) {
+        p3UnitTableMetric = (m === 'vendas') ? 'vendas' : 'altas';
+        renderUnidades();
+    }
+
+    function buildUnitComboHTML(unitOrder, regUnitsHist, uM, du) {
+        ensureChurnSkeleton();
+        const regChurnUnits = (STATE.churn && STATE.churn[currentRegion] && STATE.churn[currentRegion].units) || {};
+        const selCount = p3SelectedUnits.length;
+        let btnText = `<i class="fa-solid fa-magnifying-glass-chart" style="color:var(--evo-blue);"></i> <span>Selecionar Unidade (${unitOrder.length})...</span>`;
+        if (selCount === 1) {
+            const u0 = p3SelectedUnits[0];
+            const lbl0 = (regUnitsHist[u0] && regUnitsHist[u0].label) ? regUnitsHist[u0].label : u0;
+            btnText = `<i class="fa-solid fa-location-dot" style="color:var(--evo-cyan);"></i> <span>Unidade: <b>${lbl0}</b></span>`;
+        } else if (selCount > 1) {
+            const shortList = p3SelectedUnits.slice(0, 3).join(' + ') + (selCount > 3 ? ` +${selCount - 3}` : '');
+            btnText = `<i class="fa-solid fa-layer-group" style="color:var(--evo-cyan);"></i> <span>${selCount} Unid.: <b>${shortList}</b></span>`;
+        }
+
+        const encodedOrder = encodeURIComponent(JSON.stringify(unitOrder));
+        let itemsHtml = '';
+        const qNorm = normName(p3ComboSearch);
+
+        unitOrder.forEach(u => {
+            const uObj = regUnitsHist[u];
+            const lbl = (uObj && uObj.label) ? uObj.label : u;
+            const curRealA = (uM[u] && uM[u].a) || 0;
+            const projA = Math.round(curRealA * du.fator);
+            const chProj = Number((regChurnUnits[u] && regChurnUnits[u].proj) || 0);
+            const netProj = projA - chProj;
+            const isSel = p3SelectedUnits.includes(u);
+            const searchStr = `${u} ${lbl}`;
+            const dispStyle = (!qNorm || normName(searchStr).includes(qNorm)) ? 'flex' : 'none';
+            const encU = encodeURIComponent(u);
+            const netClr = netProj >= 0 ? 'var(--green)' : 'var(--red)';
+
+            itemsHtml += `<div class="unit-combo-item ${isSel ? 'selected' : ''}" data-search="${searchStr.replace(/"/g, '&quot;')}" style="display:${dispStyle};" onclick="selectSingleUnitExec(decodeURIComponent('${encU}'), event)">
+                <div class="unit-combo-item-left">
+                    <input type="checkbox" ${isSel ? 'checked' : ''} title="Somar unidade na seleção múltipla" onclick="toggleMultiUnitExec(decodeURIComponent('${encU}'), this.checked, event)">
+                    <span class="unit-combo-item-name" title="${lbl}">${lbl}</span>
+                </div>
+                <span class="unit-combo-item-meta">Alt: <b>${fmtInt(projA)}</b> • Net: <b style="color:${netClr};">${(netProj >= 0 ? '+' : '') + fmtInt(netProj)}</b></span>
+            </div>`;
+        });
+
+        return `<div class="unit-combo-wrap" onclick="event.stopPropagation()">
+            <button type="button" class="unit-combo-btn" onclick="toggleUnitComboMenu(event)" title="Buscar unidade ou combinar múltiplas unidades">
+                <span style="display:inline-flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${btnText}</span>
+                <i class="fa-solid fa-chevron-down" style="font-size:0.65rem; color:var(--text-muted);"></i>
+            </button>
+            <div class="unit-combo-menu ${p3ComboOpen ? 'open' : ''}">
+                <div class="unit-combo-search-box">
+                    <input type="text" class="unit-combo-search-inp" placeholder="Buscar unidade em ${currentRegion} (ex: ${unitOrder[0] || 'SPO'})..." value="${p3ComboSearch.replace(/"/g, '&quot;')}" oninput="filterUnitComboItems(this.value)">
+                    <div class="unit-combo-actions">
+                        <button type="button" class="unit-combo-link" onclick="selectAllFilteredUnitsExec(JSON.parse(decodeURIComponent('${encodedOrder}')), event)"><i class="fa-solid fa-check-double"></i> Somar Filtradas</button>
+                        <span style="color:var(--text-muted);">Clique = 1 un. | Caixa = somar</span>
+                        <button type="button" class="unit-combo-link" style="color:var(--red);" onclick="clearUnitExecSelection(event)"><i class="fa-solid fa-table-list"></i> Tabela Geral</button>
+                    </div>
+                </div>
+                <div class="unit-combo-list">${itemsHtml}</div>
+            </div>
+        </div>`;
+    }
+
+    function renderUnitExecutivePanel(unitOrder, regUnitsHist, uM, du, meses) {
+        ensureChurnSkeleton();
+        const channels = ['Inside Sales', 'Digital', 'Lojas', 'PaP', 'AA'];
+        const histChMap = {
+            'Inside Sales': 'Inside Sales',
+            'Digital': 'Digital',
+            'Lojas': 'Lojas',
+            'PaP': 'PaP Próprio',
+            'AA': 'AA'
+        };
+        const nM = meses.length;
+        const m1Idx = Math.max(0, nM - 1);
+        const mesM1Label = meses[m1Idx] || 'M-1';
+        const duArr = getHistDuArray(nM, du.duTotal);
+        const isPerDu = (p3UnitDuMode === 'perDu');
+        const isNetLens = (p3UnitLens === 'netadds');
+        const curDivisor = isPerDu ? Math.max(0.5, du.duTotal) : 1;
+        const m1Du = duArr[m1Idx] || 22;
+        const duTag = isPerDu ? ' / DU' : '';
+
+        // Filtra apenas unidades válidas da regional ativa
+        const validSel = p3SelectedUnits.filter(u => regUnitsHist[u] || uM[u]);
+        if (validSel.length === 0) {
+            p3SelectedUnits = [];
+            renderUnidades();
+            return;
+        }
+
+        // Atualiza botões de controle
+        const bAbs = document.getElementById('btn-p3-du-abs');
+        const bDu  = document.getElementById('btn-p3-du-perdu');
+        if (bAbs) bAbs.classList.toggle('active', !isPerDu);
+        if (bDu)  bDu.classList.toggle('active', isPerDu);
+
+        const bCom = document.getElementById('btn-p3-lens-comercial');
+        const bNet = document.getElementById('btn-p3-lens-netadds');
+        if (bCom) bCom.classList.toggle('active', !isNetLens);
+        if (bNet) bNet.classList.toggle('active', isNetLens);
+
+        const bTAlt = document.getElementById('btn-p3-tbl-altas');
+        const bTVnd = document.getElementById('btn-p3-tbl-vendas');
+        if (bTAlt) bTAlt.classList.toggle('active', p3UnitTableMetric === 'altas');
+        if (bTVnd) bTVnd.classList.toggle('active', p3UnitTableMetric === 'vendas');
+
+        // Monta barra superior com botão Voltar + Combobox + Setas Anterior/Próxima
+        const navLeft = document.getElementById('p3-exec-nav-left');
+        if (navLeft) {
+            const comboHtml = buildUnitComboHTML(unitOrder, regUnitsHist, uM, du);
+            const encodedOrder = encodeURIComponent(JSON.stringify(unitOrder));
+            const curPos = validSel.length === 1 ? (unitOrder.indexOf(validSel[0]) + 1) : 0;
+            const posBadge = curPos > 0 ? `<span class="badge badge-cyan" style="font-size:0.66rem;">${curPos} / ${unitOrder.length} em ${currentRegion}</span>` : `<span class="badge badge-cyan" style="font-size:0.66rem;">${validSel.length} unidades somadas (${currentRegion})</span>`;
+            navLeft.innerHTML = `
+                <button type="button" class="btn primary" style="padding:4px 10px; font-size:0.72rem;" onclick="clearUnitExecSelection(event)">
+                    <i class="fa-solid fa-arrow-left"></i> Todas as Unidades
+                </button>
+                ${comboHtml}
+                <button type="button" class="unit-nav-btn" title="Unidade Anterior" onclick="stepUnitExecSelection(-1, JSON.parse(decodeURIComponent('${encodedOrder}')))"><i class="fa-solid fa-chevron-left"></i></button>
+                <button type="button" class="unit-nav-btn" title="Próxima Unidade" onclick="stepUnitExecSelection(1, JSON.parse(decodeURIComponent('${encodedOrder}')))"><i class="fa-solid fa-chevron-right"></i></button>
+                ${posBadge}
+            `;
+        }
+
+        // Agrega dados históricos, metas/FC, realizado e churn das unidades selecionadas
+        const uHistSynthetic = {
+            meses: [...meses],
+            vendas: Object.fromEntries(channels.map(c => [c, Array(nM).fill(0)])),
+            altas:  Object.fromEntries(channels.map(c => [c, Array(nM).fill(0)])),
+            metasNov: {
+                vendas:   Object.fromEntries(channels.map(c => [c, 0])),
+                fcVendas: Object.fromEntries(channels.map(c => [c, 0])),
+                altas:    Object.fromEntries(channels.map(c => [c, 0])),
+                fcAltas:  Object.fromEntries(channels.map(c => [c, 0]))
+            },
+            realVendasHist:  Array(nM).fill(0),
+            realAltasHist:   Array(nM).fill(0),
+            metasVendasHist: Array(nM).fill(0),
+            metasAltasHist:  Array(nM).fill(0)
+        };
+
+        const realVendas = Object.fromEntries(channels.map(c => [c, 0]));
+        const realAltas  = Object.fromEntries(channels.map(c => [c, 0]));
+        const churnHist  = Array(nM).fill(0);
+        let churnProjAtual = 0;
+        const regChurnUnits = (STATE.churn && STATE.churn[currentRegion] && STATE.churn[currentRegion].units) || {};
+
+        const labelsSelected = [];
+        validSel.forEach(u => {
+            const uObj = regUnitsHist[u];
+            const lbl = (uObj && uObj.label) ? uObj.label : u;
+            labelsSelected.push(lbl);
+
+            const g = (uObj && uObj.Geral) || { V_Hist: Array(nM).fill(0), A_Hist: Array(nM).fill(0), V_Meta: 0, A_Meta: 0, V_FC: 0, A_FC: 0 };
+            const cMap = (uObj && uObj.Canais) || {};
+            const curU = uM[u] || { v: 0, a: 0, c: {} };
+
+            for (let i = 0; i < nM; i++) {
+                uHistSynthetic.realVendasHist[i] += Number((g.V_Hist && g.V_Hist[i]) || 0);
+                uHistSynthetic.realAltasHist[i]  += Number((g.A_Hist && g.A_Hist[i]) || 0);
+            }
+
+            channels.forEach(c => {
+                const hKey = histChMap[c];
+                const chNode = cMap[hKey] || { V_Hist: Array(nM).fill(0), A_Hist: Array(nM).fill(0), V_Meta: 0, A_Meta: 0, V_FC: 0, A_FC: 0 };
+                for (let i = 0; i < nM; i++) {
+                    uHistSynthetic.vendas[c][i] += Number((chNode.V_Hist && chNode.V_Hist[i]) || 0);
+                    uHistSynthetic.altas[c][i]  += Number((chNode.A_Hist && chNode.A_Hist[i]) || 0);
+                }
+                const cmV = Number(chNode.V_Meta || 0);
+                const cfV = Number(chNode.V_FC || chNode.V_Meta || 0);
+                const cmA = Number(chNode.A_Meta || 0);
+                const cfA = Number(chNode.A_FC || chNode.A_Meta || 0);
+                uHistSynthetic.metasNov.vendas[c]   += cmV;
+                uHistSynthetic.metasNov.fcVendas[c] += cfV;
+                uHistSynthetic.metasNov.altas[c]    += cmA;
+                uHistSynthetic.metasNov.fcAltas[c]  += cfA;
+
+                const curCh = (curU.c && curU.c[c]) || { v: 0, a: 0 };
+                realVendas[c] += Number(curCh.v || 0);
+                realAltas[c]  += Number(curCh.a || 0);
+            });
+
+            const uCh = regChurnUnits[u];
+            if (uCh) {
+                for (let i = 0; i < nM; i++) {
+                    churnHist[i] += Number((uCh.hist && uCh.hist[i]) || 0);
+                }
+                churnProjAtual += Number(uCh.proj || 0);
+            }
+        });
+
+        const unitTitleLabel = labelsSelected.length <= 3 ? labelsSelected.join(' + ') : `${labelsSelected.slice(0, 2).join(' + ')} (+${labelsSelected.length - 2})`;
+        const netAddsHist = Array.from({ length: nM }, (_, i) => uHistSynthetic.realAltasHist[i] - churnHist[i]);
+
+        const totV = channels.reduce((s, c) => s + realVendas[c], 0);
+        const totA = channels.reduce((s, c) => s + realAltas[c], 0);
+        const pv = totV * du.fator;
+        const pa = totA * du.fator;
+        const mV = channels.reduce((s, c) => s + (uHistSynthetic.metasNov.vendas[c] || 0), 0);
+        const fV = channels.reduce((s, c) => s + (uHistSynthetic.metasNov.fcVendas[c] || 0), 0);
+        const mA = channels.reduce((s, c) => s + (uHistSynthetic.metasNov.altas[c] || 0), 0);
+        const fA = channels.reduce((s, c) => s + (uHistSynthetic.metasNov.fcAltas[c] || 0), 0);
+
+        const m1ValV = Number(uHistSynthetic.realVendasHist[m1Idx] || 0);
+        const m1ValA = Number(uHistSynthetic.realAltasHist[m1Idx] || 0);
+        const m1ValChurn = Number(churnHist[m1Idx] || 0);
+        const m1ValNet = Number(netAddsHist[m1Idx] || (m1ValA - m1ValChurn));
+
+        const m1PctV = m1ValV > 0 ? ((pv / m1ValV) - 1) * 100 : 0;
+        const m1PctA = m1ValA > 0 ? ((pa / m1ValA) - 1) * 100 : 0;
+        const m1Efic = m1ValV > 0 ? (m1ValA / m1ValV) * 100 : 0;
+
+        const pctV = fV > 0 ? (pv / fV) * 100 : 0;
+        const pctA = fA > 0 ? (pa / fA) * 100 : 0;
+        const efic = totV > 0 ? (totA / totV) * 100 : 0;
+        const netProjAtual = pa - churnProjAtual;
+
+        const projVColor = fV > 0 ? (pv >= fV ? 'var(--green)' : 'var(--red)') : 'var(--evo-blue)';
+        const projAColor = fA > 0 ? (pa >= fA ? 'var(--green)' : 'var(--red)') : 'var(--evo-blue)';
+        const netProjColor = netProjAtual >= 0 ? 'var(--green)' : 'var(--red)';
+
+        const dispVReal = isPerDu ? (totV / curDivisor) : totV;
+        const dispVProj = isPerDu ? (pv / curDivisor) : pv;
+        const dispVMeta = isPerDu ? (mV / curDivisor) : mV;
+        const dispVFc   = isPerDu ? (fV / curDivisor) : fV;
+        const dispVM1   = isPerDu ? (m1ValV / m1Du) : m1ValV;
+
+        const dispAReal = isPerDu ? (totA / curDivisor) : totA;
+        const dispAProj = isPerDu ? (pa / curDivisor) : pa;
+        const dispAMeta = isPerDu ? (mA / curDivisor) : mA;
+        const dispAFc   = isPerDu ? (fA / curDivisor) : fA;
+        const dispAM1   = isPerDu ? (m1ValA / m1Du) : m1ValA;
+
+        const dispChurnProj = isPerDu ? (churnProjAtual / curDivisor) : churnProjAtual;
+        const dispNetProj   = isPerDu ? (netProjAtual / curDivisor) : netProjAtual;
+        const dispChurnM1   = isPerDu ? (m1ValChurn / m1Du) : m1ValChurn;
+        const dispNetM1     = isPerDu ? (m1ValNet / m1Du) : m1ValNet;
+
+        const subVHtml = fV > 0
+            ? `Meta: ${fmtMetricVal(dispVMeta, isPerDu)} | FC: ${fmtMetricVal(dispVFc, isPerDu)} | M-1 (${mesM1Label}): <b>${fmtMetricVal(dispVM1, isPerDu)}</b>`
+            : `M-1 (${mesM1Label}): <b>${fmtMetricVal(dispVM1, isPerDu)}</b> <span style="opacity:0.75;">• Sem Meta/FC cadastrada</span>`;
+        const subAHtml = fA > 0
+            ? `Meta: ${fmtMetricVal(dispAMeta, isPerDu)} | FC: ${fmtMetricVal(dispAFc, isPerDu)} | M-1 (${mesM1Label}): <b>${fmtMetricVal(dispAM1, isPerDu)}</b>`
+            : `M-1 (${mesM1Label}): <b>${fmtMetricVal(dispAM1, isPerDu)}</b> <span style="opacity:0.75;">• Sem Meta/FC cadastrada</span>`;
+
+        document.getElementById('p3-kpis').innerHTML = `
+            <div class="kpi-card cyan">
+                <div class="kpi-top-row">
+                    <div class="kpi-main-col">
+                        <div class="kpi-label"><span>Vendas${duTag} — ${unitTitleLabel}</span></div>
+                        <div class="kpi-value">${fmtMetricVal(dispVReal, isPerDu)} <span style="font-size:0.92rem; font-weight:700; color:${projVColor};">/ ${fmtMetricVal(dispVProj, isPerDu)}</span></div>
+                    </div>
+                    <div class="kpi-badges-stack">
+                        ${fV > 0 ? `<span class="badge ${pctV >= 100 ? 'badge-good' : 'badge-bad'}">${fmtPct(pctV)} FC</span>` : `<span class="badge badge-cyan">Proj. Mês</span>`}
+                        <span class="badge ${m1ValV > 0 ? (m1PctV >= 0 ? 'badge-good' : 'badge-bad') : 'badge-cyan'}">M-1: ${m1ValV > 0 ? ((m1PctV >= 0 ? '+' : '') + fmtPct(m1PctV)) : '-'}</span>
+                    </div>
+                </div>
+                <div class="kpi-sub">${subVHtml}</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-top-row">
+                    <div class="kpi-main-col">
+                        <div class="kpi-label"><span>Altas${duTag} — ${unitTitleLabel}</span></div>
+                        <div class="kpi-value">${fmtMetricVal(dispAReal, isPerDu)} <span style="font-size:0.92rem; font-weight:700; color:${projAColor};">/ ${fmtMetricVal(dispAProj, isPerDu)}</span></div>
+                    </div>
+                    <div class="kpi-badges-stack">
+                        ${fA > 0 ? `<span class="badge ${pctA >= 100 ? 'badge-good' : 'badge-bad'}">${fmtPct(pctA)} FC</span>` : `<span class="badge badge-cyan">Proj. Mês</span>`}
+                        <span class="badge ${m1ValA > 0 ? (m1PctA >= 0 ? 'badge-good' : 'badge-bad') : 'badge-cyan'}">M-1: ${m1ValA > 0 ? ((m1PctA >= 0 ? '+' : '') + fmtPct(m1PctA)) : '-'}</span>
+                    </div>
+                </div>
+                <div class="kpi-sub">${subAHtml}</div>
+            </div>
+            <div class="kpi-card green">
+                <div class="kpi-top-row">
+                    <div class="kpi-main-col">
+                        <div class="kpi-label"><span>Eficiência (Altas / Vendas)</span></div>
+                        <div class="kpi-value" style="color:${efic >= 90 ? 'var(--green)' : (efic >= 85 ? '#B45309' : 'var(--red)')}">${totV > 0 ? fmtPct(efic) : '-'}</div>
+                    </div>
+                    <div class="kpi-badges-stack" style="width:116px;">
+                        <span class="badge ${getEficBadgeClass(m1Efic)}">M-1 (${mesM1Label}): ${fmtPct(m1Efic)}</span>
+                    </div>
+                </div>
+                <div class="kpi-sub">Régua: &lt;85% Verm. | 85-90% Amar. | &ge;90% Verde</div>
+            </div>
+            <div class="kpi-card ${netProjAtual >= 0 ? 'green' : 'coral'}">
+                <div class="kpi-top-row">
+                    <div class="kpi-main-col">
+                        <div class="kpi-label"><span>Net Adds${duTag} (Proj. Mês)</span></div>
+                        <div class="kpi-value" style="color:${netProjColor};">${netProjAtual >= 0 ? '+' : ''}${fmtMetricVal(dispNetProj, isPerDu)}</div>
+                    </div>
+                    <div class="kpi-badges-stack" style="width:118px;">
+                        <span class="badge ${netProjAtual >= 0 ? 'badge-good' : 'badge-bad'}">${netProjAtual >= 0 ? 'Crescimento' : 'Perda Base'}</span>
+                        <span class="badge badge-cyan">M-1: ${(m1ValNet >= 0 ? '+' : '') + fmtMetricVal(dispNetM1, isPerDu)}</span>
+                    </div>
+                </div>
+                <div class="kpi-sub">Churn Proj.: <b>${fmtMetricVal(dispChurnProj, isPerDu)}</b> | M-1 Churn: <b>${fmtMetricVal(dispChurnM1, isPerDu)}</b></div>
+            </div>
+        `;
+
+        const c1Title = document.getElementById('p3-chart1-title');
+        const c2Title = document.getElementById('p3-chart2-title');
+        const mTitle  = document.getElementById('p3-matrix-title');
+        const mCtrls  = document.getElementById('p3-matrix-controls');
+        const manyMonthsCls = (meses.length > 10) ? " many-months" : "";
+
+        if (!isNetLens) {
+            if (c1Title) c1Title.innerHTML = `<i class="fa-solid fa-chart-column"></i> Evolução Histórica & Projeção — Vendas${duTag} (${unitTitleLabel})`;
+            if (c2Title) c2Title.innerHTML = `<i class="fa-solid fa-chart-column"></i> Evolução Histórica & Projeção — Altas${duTag} (${unitTitleLabel})`;
+            if (mTitle)  mTitle.innerHTML  = `<i class="fa-solid fa-table"></i> Matriz Executiva por Canal & Presencial vs. Remoto${duTag} — ${unitTitleLabel} (${currentRegion})`;
+            if (mCtrls)  mCtrls.style.display = 'flex';
+
+            chartUnidadeVendasObj = buildConsolidadoChart('chartUnidadeVendas', chartUnidadeVendasObj, 'vendas', du, channels, realVendas, realAltas, uHistSynthetic, { isPerDu, noFallbackMeta: true });
+            chartUnidadeAltasObj  = buildConsolidadoChart('chartUnidadeAltas',  chartUnidadeAltasObj,  'altas',  du, channels, realVendas, realAltas, uHistSynthetic, { isPerDu, noFallbackMeta: true });
+
+            const tS = uHistSynthetic[p3UnitTableMetric];
+            const tR = p3UnitTableMetric === 'altas' ? realAltas : realVendas;
+            const tM = p3UnitTableMetric === 'altas' ? uHistSynthetic.metasNov.altas : uHistSynthetic.metasNov.vendas;
+            const tF = p3UnitTableMetric === 'altas' ? uHistSynthetic.metasNov.fcAltas : uHistSynthetic.metasNov.fcVendas;
+            const totCur = p3UnitTableMetric === 'altas' ? totA : totV;
+            const projCur = p3UnitTableMetric === 'altas' ? pa : pv;
+            const sM = channels.reduce((s, c) => s + (tM[c] || 0), 0);
+            const sF = channels.reduce((s, c) => s + (tF[c] || 0), 0);
+            const exactTblRealArr = p3UnitTableMetric === 'altas' ? uHistSynthetic.realAltasHist : uHistSynthetic.realVendasHist;
+            const totHistByMonth = meses.map((_, i) => {
+                const chSum = channels.reduce((s, c) => s + (tS[c][i] || 0), 0);
+                return (chSum === 0 && exactTblRealArr[i] != null) ? Number(exactTblRealArr[i]) : chSum;
+            });
+
+            let h = `<table class="tbl-exec-matrix${manyMonthsCls}"><thead><tr><th class="left grp-sep">Canal / Grupo</th>`;
+            meses.forEach((m, idx) => h += `<th class="hist-col ${idx === meses.length - 1 ? 'grp-sep' : ''}">${m}</th>`);
+            h += `<th>Meta</th><th class="grp-sep">FC</th><th>Real</th><th class="grp-sep">Proj.</th><th>% FC</th><th class="grp-sep">M-1</th><th>Efic.</th></tr></thead><tbody>`;
+
+            const macroGroups = [
+                { label: 'PRESENCIAL', sub: 'Lojas + PaP + AA', list: ['Lojas', 'PaP', 'AA'], extraCls: '' },
+                { label: 'REMOTO', sub: 'IS + Digital', list: ['Inside Sales', 'Digital'], extraCls: 'row-macro-last' }
+            ];
+
+            macroGroups.forEach(grp => {
+                const gHistRaw = meses.map((_, i) => grp.list.reduce((s, c) => s + (tS[c][i] || 0), 0));
+                const gMetaRaw = grp.list.reduce((s, c) => s + (tM[c] || 0), 0);
+                const gFcRaw   = grp.list.reduce((s, c) => s + (tF[c] || 0), 0);
+                const gRealRaw = grp.list.reduce((s, c) => s + (tR[c] || 0), 0);
+                const gProjRaw = gRealRaw * du.fator;
+                const gM1Raw   = gHistRaw[m1Idx] || 0;
+                const gPctFc   = gFcRaw > 0 ? (gProjRaw / gFcRaw) * 100 : 0;
+                const gM1Pct   = gM1Raw > 0 ? ((gProjRaw / gM1Raw) - 1) * 100 : 0;
+
+                const gRealV = grp.list.reduce((s, c) => s + (realVendas[c] || 0), 0);
+                const gRealA = grp.list.reduce((s, c) => s + (realAltas[c] || 0), 0);
+                const gEfic  = gRealV > 0 ? (gRealA / gRealV) * 100 : 0;
+
+                h += `<tr class="row-macro ${grp.extraCls}">
+                    <td class="left grp-sep" title="${grp.label} (${grp.sub})">
+                        <div class="macro-vol">${grp.label}</div>
+                        <div class="macro-share">${grp.sub}</div>
+                    </td>`;
+
+                gHistRaw.forEach((v, idx) => {
+                    const wPct = totHistByMonth[idx] > 0 ? (v / totHistByMonth[idx]) * 100 : 0;
+                    const vDisp = isPerDu ? (v / duArr[idx]) : v;
+                    h += `<td class="hist-col ${idx === gHistRaw.length - 1 ? 'grp-sep' : ''}">
+                        <div class="macro-vol">${fmtMetricVal(vDisp, isPerDu)}</div>
+                        <div class="macro-share">${fmtPct(wPct)}</div>
+                    </td>`;
+                });
+
+                const wMeta = sM > 0 ? (gMetaRaw / sM) * 100 : 0;
+                const wFc   = sF > 0 ? (gFcRaw / sF) * 100 : 0;
+                const wReal = totCur > 0 ? (gRealRaw / totCur) * 100 : 0;
+                const wProj = projCur > 0 ? (gProjRaw / projCur) * 100 : 0;
+
+                h += `<td>${gMetaRaw > 0 ? `<div class="macro-vol">${fmtMetricVal(isPerDu ? gMetaRaw / curDivisor : gMetaRaw, isPerDu)}</div><div class="macro-share">${fmtPct(wMeta)}</div>` : '-'}</td>
+                      <td class="grp-sep">${gFcRaw > 0 ? `<div class="macro-vol">${fmtMetricVal(isPerDu ? gFcRaw / curDivisor : gFcRaw, isPerDu)}</div><div class="macro-share">${fmtPct(wFc)}</div>` : '-'}</td>
+                      <td><div class="macro-vol">${fmtMetricVal(isPerDu ? gRealRaw / curDivisor : gRealRaw, isPerDu)}</div><div class="macro-share">${fmtPct(wReal)}</div></td>
+                      <td class="grp-sep"><div class="macro-vol" style="color:var(--evo-blue);">${fmtMetricVal(isPerDu ? gProjRaw / curDivisor : gProjRaw, isPerDu)}</div><div class="macro-share">${fmtPct(wProj)}</div></td>
+                      <td class="${gFcRaw > 0 ? (gPctFc >= 100 ? 'val-green' : 'val-red') : ''}">${gFcRaw > 0 ? fmtPct(gPctFc) : '-'}</td>
+                      <td class="grp-sep ${gM1Raw > 0 ? (gM1Pct >= 0 ? 'val-green' : 'val-red') : ''}">${gM1Raw > 0 ? ((gM1Pct >= 0 ? '+' : '') + fmtPct(gM1Pct)) : '-'}</td>
+                      <td class="${gRealV > 0 ? getEficClass(gEfic) : ''}">${gRealV > 0 ? fmtPct(gEfic) : '-'}</td>
+                </tr>`;
+            });
+
+            channels.forEach(c => {
+                const rRaw = tR[c], pRaw = rRaw * du.fator, mRaw = tM[c] || 0, fcRaw = tF[c] || 0, outRaw = tS[c][m1Idx] || 0;
+                const pFc = fcRaw > 0 ? (pRaw / fcRaw) * 100 : 0;
+                const m1 = outRaw > 0 ? ((pRaw / outRaw) - 1) * 100 : 0;
+                const eficReal = realVendas[c] > 0 ? (realAltas[c] / realVendas[c]) * 100 : 0;
+                h += `<tr><td class="left grp-sep"><b>${c === 'PaP' ? 'PaP Próprio' : c}</b></td>`;
+                tS[c].forEach((v, idx) => {
+                    const vDisp = isPerDu ? (v / duArr[idx]) : v;
+                    h += `<td class="hist-col ${idx === tS[c].length - 1 ? 'grp-sep' : ''}">${fmtMetricVal(vDisp, isPerDu)}</td>`;
+                });
+                h += `<td>${mRaw > 0 ? fmtMetricVal(isPerDu ? mRaw / curDivisor : mRaw, isPerDu) : '-'}</td>
+                      <td class="grp-sep">${fcRaw > 0 ? fmtMetricVal(isPerDu ? fcRaw / curDivisor : fcRaw, isPerDu) : '-'}</td>
+                      <td><b>${fmtMetricVal(isPerDu ? rRaw / curDivisor : rRaw, isPerDu)}</b></td>
+                      <td class="grp-sep" style="color:var(--evo-blue);font-weight:700">${fmtMetricVal(isPerDu ? pRaw / curDivisor : pRaw, isPerDu)}</td>
+                      <td class="${fcRaw > 0 ? (pFc >= 100 ? 'val-green' : 'val-red') : ''}">${fcRaw > 0 ? fmtPct(pFc) : '-'}</td>
+                      <td class="grp-sep ${outRaw > 0 ? (m1 >= 0 ? 'val-green' : 'val-red') : ''}">${outRaw > 0 ? ((m1 >= 0 ? '+' : '') + fmtPct(m1)) : '-'}</td>
+                      <td class="${realVendas[c] > 0 ? getEficClass(eficReal) : ''}">${realVendas[c] > 0 ? fmtPct(eficReal) : '-'}</td></tr>`;
+            });
+
+            const totM1Raw = totHistByMonth[m1Idx] || 0;
+            const totM1Pct = totM1Raw > 0 ? ((projCur / totM1Raw) - 1) * 100 : 0;
+            const totPctF = sF > 0 ? (projCur / sF) * 100 : 0;
+
+            h += `<tr class="row-total"><td class="left grp-sep">UNID. ${unitTitleLabel}</td>`;
+            meses.forEach((_, i) => {
+                const vDisp = isPerDu ? (totHistByMonth[i] / duArr[i]) : totHistByMonth[i];
+                h += `<td class="hist-col ${i === meses.length - 1 ? 'grp-sep' : ''}">${fmtMetricVal(vDisp, isPerDu)}</td>`;
+            });
+            h += `<td>${sM > 0 ? fmtMetricVal(isPerDu ? sM / curDivisor : sM, isPerDu) : '-'}</td>
+                  <td class="grp-sep">${sF > 0 ? fmtMetricVal(isPerDu ? sF / curDivisor : sF, isPerDu) : '-'}</td>
+                  <td>${fmtMetricVal(isPerDu ? totCur / curDivisor : totCur, isPerDu)}</td>
+                  <td class="grp-sep">${fmtMetricVal(isPerDu ? projCur / curDivisor : projCur, isPerDu)}</td>
+                  <td class="${sF > 0 ? (totPctF >= 100 ? 'val-green' : 'val-red') : ''}">${sF > 0 ? fmtPct(totPctF) : '-'}</td>
+                  <td class="grp-sep ${totM1Raw > 0 ? (totM1Pct >= 0 ? 'val-green' : 'val-red') : ''}">${totM1Raw > 0 ? ((totM1Pct >= 0 ? '+' : '') + fmtPct(totM1Pct)) : '-'}</td>
+                  <td class="${totV > 0 ? getEficClass(efic) : ''}">${totV > 0 ? fmtPct(efic) : '-'}</td></tr></tbody></table>`;
+
+            document.getElementById('p3-exec-table').innerHTML = h;
+            return;
+        }
+
+        // LENTE CHURN & NET ADDS DA UNIDADE
+        if (c1Title) c1Title.innerHTML = `<i class="fa-solid fa-chart-column"></i> Altas vs. Churn${duTag} (${unitTitleLabel})`;
+        if (c2Title) c2Title.innerHTML = `<i class="fa-solid fa-chart-column"></i> Evolução Net Adds (Altas − Churn)${duTag} (${unitTitleLabel})`;
+        if (mTitle)  mTitle.innerHTML  = `<i class="fa-solid fa-table"></i> Matriz de Net Adds${duTag} — ${unitTitleLabel} (Carga: ${STATE.churn.lastChurnUpdate || 'N/A'})`;
+        if (mCtrls)  mCtrls.style.display = 'none';
+
+        const pairRes = renderNetAddsPairCharts('chartUnidadeVendas', 'chartUnidadeAltas', chartUnidadeVendasObj, chartUnidadeAltasObj, du, uHistSynthetic, churnHist, churnProjAtual, netAddsHist, pa, isPerDu);
+        chartUnidadeVendasObj = pairRes.chart1;
+        chartUnidadeAltasObj  = pairRes.chart2;
+
+        let hNet = `<table class="tbl-exec-matrix${manyMonthsCls}"><thead><tr><th class="left grp-sep">Indicador (${unitTitleLabel})</th>`;
+        meses.forEach((m, idx) => hNet += `<th class="hist-col ${idx === meses.length - 1 ? 'grp-sep' : ''}">${m}</th>`);
+        hNet += `<th>Altas Proj.</th><th class="grp-sep">Churn Proj.</th><th>Net Adds Proj.</th><th class="grp-sep">M-1 Net</th><th>Efic. Altas/Vnd</th></tr></thead><tbody>`;
+
+        // Se múltiplas unidades estiverem somadas, mostra também cada unidade individual antes do consolidado
+        if (validSel.length > 1) {
+            validSel.forEach(u => {
+                const uObj = regUnitsHist[u];
+                const lbl = (uObj && uObj.label) ? uObj.label : u;
+                const g = (uObj && uObj.Geral) || { A_Hist: Array(nM).fill(0) };
+                const curU = uM[u] || { v: 0, a: 0 };
+                const uCh = regChurnUnits[u] || { hist: Array(nM).fill(0), proj: 0 };
+                const pAu = curU.a * du.fator;
+                const cPu = Number(uCh.proj || 0);
+                const nPu = pAu - cPu;
+                const nHu = Array.from({ length: nM }, (_, i) => Number((g.A_Hist && g.A_Hist[i]) || 0) - Number((uCh.hist && uCh.hist[i]) || 0));
+                const m1Nu = nHu[m1Idx] || 0;
+                const efU = curU.v > 0 ? (curU.a / curU.v) * 100 : 0;
+
+                hNet += `<tr><td class="left grp-sep"><b>${lbl}</b></td>`;
+                nHu.forEach((nv, idx) => {
+                    const vDisp = isPerDu ? (nv / duArr[idx]) : nv;
+                    hNet += `<td class="hist-col ${idx === nHu.length - 1 ? 'grp-sep' : ''} ${nv >= 0 ? 'val-green' : 'val-red'}">${(nv >= 0 ? '+' : '') + fmtMetricVal(vDisp, isPerDu)}</td>`;
+                });
+                hNet += `<td><b>${fmtMetricVal(isPerDu ? pAu / curDivisor : pAu, isPerDu)}</b></td>
+                         <td class="grp-sep" style="color:var(--evo-coral); font-weight:700;">${fmtMetricVal(isPerDu ? cPu / curDivisor : cPu, isPerDu)}</td>
+                         <td class="${nPu >= 0 ? 'val-green' : 'val-red'}">${(nPu >= 0 ? '+' : '') + fmtMetricVal(isPerDu ? nPu / curDivisor : nPu, isPerDu)}</td>
+                         <td class="grp-sep ${m1Nu >= 0 ? 'val-green' : 'val-red'}">${(m1Nu >= 0 ? '+' : '') + fmtMetricVal(isPerDu ? m1Nu / m1Du : m1Nu, isPerDu)}</td>
+                         <td class="${curU.v > 0 ? getEficClass(efU) : ''}">${curU.v > 0 ? fmtPct(efU) : '-'}</td></tr>`;
+            });
+        }
+
+        const altHistDispRow = meses.map((_, i) => fmtMetricVal(isPerDu ? uHistSynthetic.realAltasHist[i] / duArr[i] : uHistSynthetic.realAltasHist[i], isPerDu));
+        const chuHistDispRow = meses.map((_, i) => fmtMetricVal(isPerDu ? churnHist[i] / duArr[i] : churnHist[i], isPerDu));
+        const netHistDispRow = meses.map((_, i) => {
+            const nv = netAddsHist[i];
+            return (nv >= 0 ? '+' : '') + fmtMetricVal(isPerDu ? nv / duArr[i] : nv, isPerDu);
+        });
+
+        hNet += `<tr class="row-macro"><td class="left grp-sep">ALTAS (ENTRADAS)</td>`;
+        altHistDispRow.forEach((v, idx) => hNet += `<td class="hist-col ${idx === altHistDispRow.length - 1 ? 'grp-sep' : ''}">${v}</td>`);
+        hNet += `<td><b>${fmtMetricVal(dispAProj, isPerDu)}</b></td><td class="grp-sep">-</td><td>-</td><td class="grp-sep">${fmtMetricVal(dispAM1, isPerDu)}</td><td>-</td></tr>`;
+
+        hNet += `<tr class="row-macro row-macro-last"><td class="left grp-sep">CHURN (BAIXAS)</td>`;
+        chuHistDispRow.forEach((v, idx) => hNet += `<td class="hist-col ${idx === chuHistDispRow.length - 1 ? 'grp-sep' : ''}" style="color:var(--evo-coral);">${v}</td>`);
+        hNet += `<td>-</td><td class="grp-sep" style="color:var(--evo-coral); font-weight:700;">${fmtMetricVal(dispChurnProj, isPerDu)}</td><td>-</td><td class="grp-sep">${fmtMetricVal(dispChurnM1, isPerDu)}</td><td>-</td></tr>`;
+
+        hNet += `<tr class="row-total"><td class="left grp-sep">NET ADDS (${unitTitleLabel})</td>`;
+        netAddsHist.forEach((nv, idx) => {
+            hNet += `<td class="hist-col ${idx === netAddsHist.length - 1 ? 'grp-sep' : ''} ${nv >= 0 ? 'val-green' : 'val-red'}">${netHistDispRow[idx]}</td>`;
+        });
+        hNet += `<td>${fmtMetricVal(dispAProj, isPerDu)}</td>
+                 <td class="grp-sep">${fmtMetricVal(dispChurnProj, isPerDu)}</td>
+                 <td class="${netProjAtual >= 0 ? 'val-green' : 'val-red'}">${(netProjAtual >= 0 ? '+' : '') + fmtMetricVal(dispNetProj, isPerDu)}</td>
+                 <td class="grp-sep ${m1ValNet >= 0 ? 'val-green' : 'val-red'}">${(m1ValNet >= 0 ? '+' : '') + fmtMetricVal(dispNetM1, isPerDu)}</td>
+                 <td class="${totV > 0 ? getEficClass(efic) : ''}">${totV > 0 ? fmtPct(efic) : '-'}</td></tr></tbody></table>`;
+
+        document.getElementById('p3-exec-table').innerHTML = hNet;
     }
 
     function renderUnidades() {
@@ -3978,22 +4878,10 @@
         const prevHistMes = m1Index > 0 ? meses[m1Index - 1] : firstHistMes;
         const rangeLabel = m1Index > 0 ? `${firstHistMes}–${prevHistMes}` : 'Anterior';
 
-        const ctrlEl = document.getElementById('p3-unidades-controls');
-        if (ctrlEl) {
-            ctrlEl.innerHTML = `
-                <span style="font-size:0.72rem; color:var(--text-muted); font-weight:500;">
-                    <i class="fa-solid fa-eye-slash"></i> ${showHistUnidades ? `Exibindo histórico completo (${firstHistMes}–${mesM1Nome})` : `Meses anteriores (${rangeLabel}) ocultos • M-1 (${mesM1Nome}) visível`}
-                </span>
-                <button class="pill-btn ${showHistUnidades ? 'active' : ''}" onclick="toggleHistUnidades()">
-                    <i class="fa-solid ${showHistUnidades ? 'fa-compress' : 'fa-clock-rotate-left'}"></i>
-                    ${showHistUnidades ? `Ocultar Histórico (${rangeLabel})` : `Exibir Histórico (${rangeLabel})`}
-                </button>
-            `;
-        }
-
-        // Agrega realizado atual por unidade e canal
+        // Agrega realizado atual por unidade e canal na regional ativa
         const uM = {};
         blReg.forEach(r => {
+            if (r[3] !== currentRegion) return;
             const u = normalizeUnitKey(r[2]);
             const ch = mapChannel(r[1]).short;
             const v = Number(r[6]) || 0;
@@ -4019,8 +4907,45 @@
             }
         });
 
+        const regUnitsHist = (STATE.unitsHist && STATE.unitsHist[currentRegion]) || {};
+        const savedUnitOrder = STATE.unitsHist && STATE.unitsHist.unitOrder && STATE.unitsHist.unitOrder[currentRegion];
+        const rawOrder = (Array.isArray(savedUnitOrder) && savedUnitOrder.length > 0)
+            ? Array.from(new Set([...savedUnitOrder, ...Object.keys(uM)]))
+            : Object.keys({ ...regUnitsHist, ...uM }).sort((a, b) => ((uM[b] && uM[b].a) || 0) - ((uM[a] && uM[a].a) || 0));
+        const unitOrder = rawOrder.filter(u => regUnitsHist[u] || uM[u]);
+
+        const tblCard = document.getElementById('p3-table-card');
+        const execWrap = document.getElementById('p3-exec-wrap');
+
+        // Se houver unidade(s) selecionada(s), renderiza o Painel Executivo One-Page da Unidade
+        const activeUnitSel = p3SelectedUnits.filter(u => regUnitsHist[u] || uM[u]);
+        if (activeUnitSel.length > 0) {
+            if (tblCard) tblCard.style.display = 'none';
+            if (execWrap) execWrap.style.display = 'flex';
+            renderUnitExecutivePanel(unitOrder, regUnitsHist, uM, du, meses);
+            return;
+        }
+
+        if (tblCard) tblCard.style.display = 'flex';
+        if (execWrap) execWrap.style.display = 'none';
+
+        const ctrlEl = document.getElementById('p3-unidades-controls');
+        if (ctrlEl) {
+            const comboHtml = buildUnitComboHTML(unitOrder, regUnitsHist, uM, du);
+            ctrlEl.innerHTML = `
+                ${comboHtml}
+                <span style="font-size:0.71rem; color:var(--text-muted); font-weight:500;">
+                    <i class="fa-solid fa-eye-slash"></i> ${showHistUnidades ? `Histórico (${firstHistMes}–${mesM1Nome})` : `M-1 (${mesM1Nome}) visível`}
+                </span>
+                <button class="pill-btn ${showHistUnidades ? 'active' : ''}" onclick="toggleHistUnidades()">
+                    <i class="fa-solid ${showHistUnidades ? 'fa-compress' : 'fa-clock-rotate-left'}"></i>
+                    ${showHistUnidades ? `Ocultar (${rangeLabel})` : `Histórico (${rangeLabel})`}
+                </button>
+            `;
+        }
+
         const histColsCount = showHistUnidades ? totalMeses : 1;
-        const blockSpan = histColsCount + 6; // meses visíveis + Meta + FC + Real + Proj + % Proj + M-1
+        const blockSpan = histColsCount + 6;
 
         let h = `<div class="units-scroll-wrap"><table class="tbl-unidades"><thead>
             <tr>
@@ -4034,7 +4959,6 @@
             </tr>
             <tr>`;
 
-        // Cabeçalhos VENDAS
         if (showHistUnidades) {
             for (let idx = 0; idx < m1Index; idx++) {
                 h += `<th class="th-vendas-sub th-hist-mes">${meses[idx]}</th>`;
@@ -4043,7 +4967,6 @@
         h += `<th class="th-vendas-sub th-hist-mes">${mesM1Nome}</th>`;
         h += `<th class="th-vendas-sub col-kpi-std">Meta<br>${mesAtualNome}</th><th class="th-vendas-sub col-kpi-std">FC<br>${mesAtualNome}</th><th class="th-vendas-sub col-kpi-std">Real</th><th class="th-vendas-sub col-kpi-std">Proj.</th><th class="th-vendas-sub col-kpi-pct">% Proj.</th><th class="th-vendas-sub col-kpi-pct">M-1</th>`;
 
-        // Cabeçalhos ALTAS
         if (showHistUnidades) {
             for (let idx = 0; idx < m1Index; idx++) {
                 h += `<th class="th-altas-sub th-hist-mes">${meses[idx]}</th>`;
@@ -4062,12 +4985,6 @@
             'PaP': 'PaP Próprio',
             'AA': 'AA'
         };
-
-        const regUnitsHist = (STATE.unitsHist && STATE.unitsHist[currentRegion]) || {};
-        const savedUnitOrder = STATE.unitsHist && STATE.unitsHist.unitOrder && STATE.unitsHist.unitOrder[currentRegion];
-        const unitOrder = (Array.isArray(savedUnitOrder) && savedUnitOrder.length > 0)
-            ? Array.from(new Set([...savedUnitOrder, ...Object.keys(uM)]))
-            : Object.keys(uM).sort((a, b) => uM[b].a - uM[a].a);
 
         unitOrder.forEach(u => {
             const uHistObj = regUnitsHist[u];
@@ -4089,6 +5006,7 @@
                 V_Meta: 0, A_Meta: 0, V_FC: 0, A_FC: 0
             };
             const unitLabel = (uHistObj && uHistObj.label) ? uHistObj.label : u;
+            const encU = encodeURIComponent(u);
 
             const vProj = curU.v * du.fator;
             const aProj = curU.a * du.fator;
@@ -4102,9 +5020,8 @@
             const aM1 = aOut > 0 ? ((aProj / aOut) - 1) * 100 : 0;
             const ef = curU.v > 0 ? (curU.a / curU.v) * 100 : 0;
 
-            // Linha Consolidada da Unidade
-            h += `<tr class="row-total row-unit-hdr">
-                <td class="left sticky-col" title="${unitLabel}"><b>${unitLabel}</b></td>
+            h += `<tr class="row-total row-unit-hdr unit-clickable-row" onclick="selectSingleUnitExec(decodeURIComponent('${encU}'), event)" title="Clique para abrir o Painel Executivo de ${unitLabel} (Gráficos, Churn, Net Adds e Matriz)">
+                <td class="left sticky-col"><b>${unitLabel}</b><span class="unit-drill-icon"><i class="fa-solid fa-chart-column"></i></span></td>
                 <td class="block-gap"></td>`;
 
             for (let idx = 0; idx <= m1Index; idx++) {
@@ -4133,7 +5050,6 @@
                   <td class="col-kpi-pct ${curU.v > 0 ? getEficClass(ef) : ''}">${curU.v > 0 ? fmtPct(ef) : '-'}</td>
             </tr>`;
 
-            // Linhas dos Canais dentro da Unidade
             const cData = uHistObj ? uHistObj.Canais : {};
             cList.forEach(ch => {
                 const histChKey = histChMap[ch];
@@ -4156,9 +5072,8 @@
                 const caM1 = caOut > 0 ? ((caProj / caOut) - 1) * 100 : 0;
                 const cef = curCh.v > 0 ? (curCh.a / curCh.v) * 100 : 0;
                 const showName = (ch === 'PaP') ? 'PaP Próprio' : ch;
-                const rowCls = '';
 
-                h += `<tr class="${rowCls}">
+                h += `<tr>
                     <td class="left sticky-col" title="${showName}">${showName}</td>
                     <td class="block-gap"></td>`;
 
@@ -4193,7 +5108,6 @@
         h += `</tbody></table></div>`;
         document.getElementById('p3-unidades-table').innerHTML = h;
     }
-
 
     let showHistCanais = false;
     let histCanaisTimer = null;
@@ -6543,9 +7457,9 @@
     }
 
     function stampLastUpdate() {
-        const now = new Date();
-        const pad = n => String(n).padStart(2, '0');
-        STATE.config.lastUpdate = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        stampLastUpdate();
+        STATE.config.syncRev = (Number(STATE.config.syncRev) || 0) + 1;
+        localDirtySinceLastSync = true;
     }
 
     function updateAgentPort(idx, val) {
@@ -7183,8 +8097,11 @@
         if (p10Locked) p10Locked.style.display = 'flex';
         if (p10Unlocked) p10Unlocked.style.display = 'none';
 
-        // 3. Limpar inputs e tabelas restritas do DOM exportado
+        // 3. Limpar inputs, seletores de unidade e tabelas restritas do DOM exportado
         if (cloneDoc.querySelector('#bi-paste-area')) cloneDoc.querySelector('#bi-paste-area').value = '';
+        if (cloneDoc.querySelector('#churn-paste-area')) cloneDoc.querySelector('#churn-paste-area').value = '';
+        if (cloneDoc.querySelector('#p3-table-card')) cloneDoc.querySelector('#p3-table-card').style.display = 'flex';
+        if (cloneDoc.querySelector('#p3-exec-wrap')) cloneDoc.querySelector('#p3-exec-wrap').style.display = 'none';
         if (cloneDoc.querySelector('#import-feedback')) cloneDoc.querySelector('#import-feedback').textContent = '';
         if (cloneDoc.querySelector('#p10-agents-crud')) cloneDoc.querySelector('#p10-agents-crud').innerHTML = '';
         if (cloneDoc.querySelector('#p10-aa-crud')) cloneDoc.querySelector('#p10-aa-crud').innerHTML = '';
@@ -7243,7 +8160,25 @@
         const st = document.getElementById('cloud-sync-status');
         try {
             if (st) { st.style.color = 'var(--evo-blue)'; st.textContent = 'Sincronizando...'; }
-            const authParam = await getFirebaseAuthQueryParam(url.includes('?'));
+
+            // Prioridade 1: WebSocket nativo do Firebase Realtime Database (propagação imediata <1s para todas as telas abertas)
+            if (firebaseAuthReady && firebase.auth().currentUser && typeof firebase.database === 'function' && window.location.protocol !== 'file:') {
+                try {
+                    const dbPath = getFirebaseDbPath();
+                    await firebase.database().ref(dbPath).set(JSON.parse(JSON.stringify(STATE)));
+                    localDirtySinceLastSync = false;
+                    attachRealtimeDatabaseListener();
+                    if (st) {
+                        st.style.color = 'var(--green)';
+                        st.textContent = 'Tempo Real sincronizado (' + (STATE.config.lastUpdate.split(' ')[1] || '') + ')!';
+                    }
+                    return;
+                } catch (wsErr) {
+                    console.warn('Fallback para REST PUT após erro SDK:', wsErr);
+                }
+            }
+
+            let authParam = await getFirebaseAuthQueryParam(url.includes('?'), false);
             if (firebaseAuthReady && !authParam && window.location.protocol === 'file:') {
                 if (st) {
                     st.style.color = 'var(--evo-blue)';
@@ -7251,12 +8186,21 @@
                 }
                 return;
             }
-            const res = await fetch(url + authParam, {
+            let res = await fetch(url + authParam, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(STATE)
             });
+            if ((res.status === 401 || res.status === 403) && firebaseAuthReady && firebase.auth().currentUser) {
+                authParam = await getFirebaseAuthQueryParam(url.includes('?'), true);
+                res = await fetch(url + authParam, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(STATE)
+                });
+            }
             if (res.ok) {
+                localDirtySinceLastSync = false;
                 if (st) {
                     st.style.color = 'var(--green)';
                     st.textContent = 'Conectado e sincronizado (' + STATE.config.lastUpdate.split(' ')[1] + ')!';
@@ -7287,7 +8231,7 @@
         return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), Number(m[4]), Number(m[5]), Number(m[6])).getTime() || 0;
     }
 
-    function applyRemoteState(remote) {
+    function applyRemoteState(remote, fromCloud = false) {
         if (!remote || !remote.config || !remote.bl || !remote.agents) return false;
         // Verifica revogação instantânea vinda da nuvem
         if (remote.config.leaderCapacity) {
@@ -7315,9 +8259,17 @@
         // Nunca sobrescrever dados válidos com o template blindado vazio (00/00/0000) ou versão mais antiga
         const remoteStr = remote.config.lastUpdate || '';
         if (!remoteStr || remoteStr === '00/00/0000 00:00:00') return false;
+        if (remoteStr === STATE.config.lastUpdate && Number(remote.config.syncRev || 0) === Number(STATE.config.syncRev || 0)) {
+            return false;
+        }
         const remoteTs = parseUpdateTimestamp(remoteStr);
         const localTs = parseUpdateTimestamp(STATE.config.lastUpdate || '');
-        if (remoteTs > 0 && localTs > 0 && remoteTs <= localTs) {
+        const embeddedTs = parseUpdateTimestamp(INITIAL_EMBEDDED_LAST_UPDATE || '');
+        const remoteRev = Number(remote.config.syncRev || 0);
+        const localRev = Number(STATE.config.syncRev || 0);
+        // Se veio ao vivo da nuvem e esta máquina não tem edição local pendente, aceita também quando syncRev maior ou quando diferente (evita bloqueio por relógio do Windows desalinhado entre máquinas)
+        const acceptDespiteClockSkew = fromCloud && !localDirtySinceLastSync && remoteTs >= embeddedTs && (remoteStr !== STATE.config.lastUpdate || remoteRev > localRev);
+        if (!acceptDespiteClockSkew && remoteTs > 0 && localTs > 0 && remoteTs <= localTs && remoteRev <= localRev) {
             const didMerge = mergeEmbeddedHistDefaults();
             const remCoHistMissing = remote.historico && remote.historico.CO && Array.isArray(remote.historico.CO.realVendasHist) &&
                 remote.historico.CO.realVendasHist.reduce((a, b) => a + (Number(b) || 0), 0) === 0;
@@ -7490,26 +8442,54 @@
             stampLastUpdate();
             setTimeout(() => { pushCloudState(false); }, 700);
         }
+        localDirtySinceLastSync = false;
+        normalizeLeaderCapacityState();
+        syncAllAgentGoalsFromMatrix();
         saveLocalStateCache();
         if (dashboardBooted) renderAll();
         return true;
     }
 
-    async function checkLiveUpdates() {
-        if (adminUnlocked) return; // Não sobrescreve enquanto o gestor estiver editando
+    async function checkLiveUpdates(forceFull = false) {
+        if (isUserActivelyEditing()) return; // Só pausa enquanto o cursor estiver digitando dentro de um campo na aba 10
+        attachRealtimeDatabaseListener();
         const cloudUrl = normalizeCloudUrl(STATE.config.cloudSyncUrl || '');
         if (cloudUrl) {
             try {
-                const authParam = await getFirebaseAuthQueryParam(true);
-                const res = await fetch(cloudUrl + (cloudUrl.includes('?') ? '&' : '?') + 't=' + Date.now() + authParam, { cache: 'no-store' });
+                // Heartbeat leve: consulta primeiro apenas /config/lastUpdate.json (~30 bytes) quando não for carga inicial forçada
+                if (!forceFull && /\.json$/i.test(cloudUrl)) {
+                    const metaUrl = cloudUrl.replace(/\.json$/i, '/config/lastUpdate.json');
+                    let authMeta = await getFirebaseAuthQueryParam(true, false);
+                    let metaRes = await fetch(metaUrl + '?t=' + Date.now() + authMeta, { cache: 'no-store' });
+                    if ((metaRes.status === 401 || metaRes.status === 403) && firebaseAuthReady && firebase.auth().currentUser) {
+                        authMeta = await getFirebaseAuthQueryParam(true, true);
+                        metaRes = await fetch(metaUrl + '?t=' + Date.now() + authMeta, { cache: 'no-store' });
+                    }
+                    if (metaRes.ok) {
+                        const remoteLastUpd = await metaRes.json();
+                        if (!remoteLastUpd || remoteLastUpd === '00/00/0000 00:00:00' || remoteLastUpd === STATE.config.lastUpdate) {
+                            return;
+                        }
+                    }
+                }
+
+                let authParam = await getFirebaseAuthQueryParam(true, false);
+                let res = await fetch(cloudUrl + (cloudUrl.includes('?') ? '&' : '?') + 't=' + Date.now() + authParam, { cache: 'no-store' });
+                if ((res.status === 401 || res.status === 403) && firebaseAuthReady && firebase.auth().currentUser) {
+                    authParam = await getFirebaseAuthQueryParam(true, true);
+                    res = await fetch(cloudUrl + (cloudUrl.includes('?') ? '&' : '?') + 't=' + Date.now() + authParam, { cache: 'no-store' });
+                }
                 if (res.ok) {
                     const remote = await res.json();
-                    applyRemoteState(remote);
+                    if (isUserActivelyEditing()) {
+                        pendingRemoteSnapshot = remote;
+                    } else {
+                        applyRemoteState(remote, true);
+                    }
                 }
             } catch (e) {}
-            return; // Quando a nuvem está configurada, nunca faz fallback para o HTML estático
+            return;
         }
-        // Fallback automático (apenas quando não usa nuvem): verifica se o index.html hospedado foi atualizado
         if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
             try {
                 const baseUrl = window.location.href.split('#')[0].split('?')[0];
@@ -7520,7 +8500,7 @@
                     const stateEl = doc.querySelector('#embedded-state');
                     if (stateEl && stateEl.textContent) {
                         const remote = JSON.parse(stateEl.textContent);
-                        applyRemoteState(remote);
+                        applyRemoteState(remote, false);
                     }
                 }
             } catch (e) {}
@@ -7922,6 +8902,8 @@
         
         STATE.config.leaderCapacity[currentCapacityRegion][nome] = { livresAR: 0, livresPaP: 0, ocupadasAR: 0, ocupadasPaP: 0 };
         inputEl.value = '';
+        stampLastUpdate();
+        saveLocalStateCache();
         renderCapacityTable();
         renderRankings();
         renderAdminAndSim();
@@ -7932,6 +8914,8 @@
         if (!confirm(`Deseja realmente excluir o líder ${nome} das vagas?`)) return;
         if (STATE.config.leaderCapacity && STATE.config.leaderCapacity[currentCapacityRegion] && STATE.config.leaderCapacity[currentCapacityRegion][nome]) {
             delete STATE.config.leaderCapacity[currentCapacityRegion][nome];
+            stampLastUpdate();
+            saveLocalStateCache();
             renderCapacityTable();
             renderRankings();
             renderAdminAndSim();
@@ -8026,7 +9010,8 @@ function updateLeaderCapacity(lider, field, value) {
         
         const val = parseInt(value, 10) || 0;
         STATE.config.leaderCapacity[currentCapacityRegion][lider][field] = val;
-        
+        stampLastUpdate();
+        saveLocalStateCache();
         renderCapacityTable();
         renderRankings();
         renderAdminAndSim();
