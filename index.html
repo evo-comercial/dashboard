@@ -632,6 +632,24 @@
             background: #E5F6FD !important;
             color: #0C4A6E !important;
         }
+        .th-portab-grp {
+            background: #DCE7F5 !important;
+            color: var(--evo-navy) !important;
+            font-size: 0.74rem !important;
+            letter-spacing: 0.04em;
+            border-bottom: 2px solid #9EB3CC !important;
+        }
+        .th-portab-sub {
+            background: #EEF4FB !important;
+            color: var(--evo-navy) !important;
+        }
+        table.tbl-unidades th.col-kpi-end,
+        table.tbl-unidades td.col-kpi-end {
+            min-width: 58px;
+            width: 62px;
+            padding-left: 0.28rem !important;
+            padding-right: 0.28rem !important;
+        }
         table.tbl-unidades th.block-gap,
         table.tbl-unidades td.block-gap,
         table.tbl-unidades tr.row-total td.block-gap,
@@ -2649,11 +2667,7 @@
                     pendingRemoteSnapshot = remote;
                     return;
                 }
-                const applied = applyRemoteState(remote, true);
-                if (!applied && dashboardBooted) {
-                    saveLocalStateCache();
-                    renderAll();
-                }
+                applyRemoteState(remote, true);
             }, (err) => {
                 console.warn('Firebase RTDB live listener fallback to polling:', err && err.message);
                 firebaseDbListenerAttached = false;
@@ -3248,8 +3262,9 @@
         try { renderAll(); } catch (e) { console.error('Erro ao renderizar painéis:', e); }
 
         setInterval(async () => {
+            if (firebaseDbListenerAttached) return;
             await checkLiveUpdates(false);
-        }, (STATE.config.cloudSyncUrl ? 4000 : 15000));
+        }, 15000);
     }
 
     async function verifyActiveFirebaseUser(user, freshSignIn = false) {
@@ -3368,6 +3383,7 @@
     };
     Chart.register(metaTickPlugin);
 
+    if (typeof Chart !== 'undefined' && Chart.defaults) { Chart.defaults.animation = false; }
     const STATE = JSON.parse(document.getElementById('embedded-state').textContent);
     const INITIAL_EMBEDDED_LAST_UPDATE = (STATE.config && STATE.config.lastUpdate) || '';
     const INITIAL_HISTORICO = JSON.parse(JSON.stringify(STATE.historico || {}));
@@ -7287,9 +7303,9 @@
                    <td class="col-kpi-pct ${mA > 0 ? (pctA >= 100 ? 'val-green' : 'val-red') : ''}">${mA > 0 ? fmtPct(pctA) : '-'}</td>
                    <td class="col-kpi-pct ${m1ACls}">${m1AStr}</td>
                    <td class="block-gap"></td>
-                   <td class="col-kpi-pct ${realV > 0 ? getEficClass(taxaRow) : ''}">${hasProd && realV > 0 ? fmtPct(taxaRow) : '-'}</td>
-                   <td class="col-kpi-std"><b>${fmtInt(pVal)}</b></td>
-                   <td class="col-kpi-pct" style="font-weight:700; color:#002A72;">${realA > 0 ? fmtPct(portPctRow) : '-'}</td>
+                   <td class="col-kpi-end ${realV > 0 ? getEficClass(taxaRow) : ''}">${hasProd && realV > 0 ? fmtPct(taxaRow) : '-'}</td>
+                   <td class="col-kpi-end"><b>${fmtInt(pVal)}</b></td>
+                   <td class="col-kpi-end" style="font-weight:700; color:var(--evo-navy);">${realA > 0 ? fmtPct(portPctRow) : '-'}</td>
             </tr>`;
             return tr;
         }
@@ -7303,9 +7319,7 @@
                     <th class="block-gap" rowspan="2"></th>
                     <th colspan="${blockSpan}" class="th-altas-grp">ATIVAÇÕES MÓVEL</th>
                     <th class="block-gap" rowspan="2"></th>
-                    <th rowspan="2" style="background:#DCE7F5; line-height:1.1;">Taxa<br>Ativ.</th>
-                    <th rowspan="2" class="col-kpi-std" style="background:#FFEDD5; color:#9A3412; line-height:1.1;">Portab.</th>
-                    <th rowspan="2" class="col-kpi-pct" style="background:#FFEDD5; color:#9A3412; line-height:1.1;">%<br>Portab.</th>
+                    <th colspan="3" class="th-portab-grp">EFICIÊNCIA &amp; PORTAB.</th>
                 </tr>
                 <tr>`;
             if (showHistMovel) {
@@ -7318,6 +7332,7 @@
             }
             h += `<th class="th-altas-sub th-hist-mes">${mesM1Nome}</th>`;
             h += `<th class="th-altas-sub col-kpi-std">Meta<br>${mesAtualNome}</th><th class="th-altas-sub col-kpi-std">Real</th><th class="th-altas-sub col-kpi-std">Proj.</th><th class="th-altas-sub col-kpi-pct">% Meta</th><th class="th-altas-sub col-kpi-pct">M-1</th>`;
+            h += `<th class="th-portab-sub col-kpi-end">Taxa<br>Ativ.</th><th class="th-portab-sub col-kpi-end">Portab.</th><th class="th-portab-sub col-kpi-end">%<br>Portab.</th>`;
             h += `</tr></thead><tbody>`;
             return h;
         }
@@ -7752,6 +7767,7 @@
         const dispAReal = isPerDu ? (curA / curDivisor) : curA;
         const dispAProj = isPerDu ? (projA / curDivisor) : projA;
         const dispVReal = isPerDu ? (curV / curDivisor) : curV;
+        const dispVProj = isPerDu ? (projV / curDivisor) : projV;
         const dispPReal = isPerDu ? (portDone / curDivisor) : portDone;
         const dispPProj = isPerDu ? (projPort / curDivisor) : projPort;
         const dispRevReal = isPerDu ? (curRev / curDivisor) : curRev;
@@ -7760,10 +7776,23 @@
         const topEl = document.getElementById('p12-top-Showcase');
         if (topEl) {
             topEl.innerHTML = `<div class="kpi-grid">
+                <div class="kpi-card cyan">
+                    <div class="kpi-top-row">
+                        <div class="kpi-main-col">
+                            <div class="kpi-label"><span>Vendas Móvel${duTag}</span></div>
+                            <div class="kpi-value">${fmtMetricVal(dispVReal, isPerDu)} <span style="font-size:0.90rem; font-weight:700; color:var(--evo-navy);">/ ${fmtMetricVal(dispVProj, isPerDu)}</span></div>
+                        </div>
+                        <div class="kpi-badges-stack">
+                            <span class="badge ${m1V > 0 ? (vM1Pct >= 0 ? 'badge-good' : 'badge-bad') : 'badge-cyan'}">M-1: ${m1V > 0 ? ((vM1Pct >= 0 ? '+' : '') + fmtPct(vM1Pct)) : '-'}</span>
+                        </div>
+                    </div>
+                    <div class="kpi-sub">M-1 (${mesM1Nome}): <b>${fmtMetricVal(isPerDu ? m1V / m1Du : m1V, isPerDu)}</b> | ${regScopeTxt}</div>
+                </div>
+
                 <div class="kpi-card">
                     <div class="kpi-top-row">
                         <div class="kpi-main-col">
-                            <div class="kpi-label"><span>Ativações &amp; Vendas Móvel${duTag}</span></div>
+                            <div class="kpi-label"><span>Ativações Móvel${duTag}</span></div>
                             <div class="kpi-value">${fmtMetricVal(dispAReal, isPerDu)} <span style="font-size:0.90rem; font-weight:700; color:var(--evo-blue);">/ ${fmtMetricVal(dispAProj, isPerDu)}</span></div>
                         </div>
                         <div class="kpi-badges-stack">
@@ -7771,7 +7800,7 @@
                             <span class="badge ${m1A > 0 ? (aM1Pct >= 0 ? 'badge-good' : 'badge-bad') : 'badge-cyan'}">M-1: ${m1A > 0 ? ((aM1Pct >= 0 ? '+' : '') + fmtPct(aM1Pct)) : '-'}</span>
                         </div>
                     </div>
-                    <div class="kpi-sub">Vendas: <b>${fmtMetricVal(dispVReal, isPerDu)}</b> (M-1: ${m1V > 0 ? ((vM1Pct >= 0 ? '+' : '') + fmtPct(vM1Pct)) : '-'}) • ${regScopeTxt}</div>
+                    <div class="kpi-sub">M-1 (${mesM1Nome}): <b>${fmtMetricVal(isPerDu ? m1A / m1Du : m1A, isPerDu)}</b></div>
                 </div>
 
                 <div class="kpi-card green">
@@ -7788,32 +7817,18 @@
                     <div class="kpi-sub">Proj. Portab.: <b>${fmtMetricVal(dispPProj, isPerDu)}</b> • M-1 (${mesM1Nome}): <b>${m1A > 0 ? fmtPct(m1PortPct) : '-'}</b> (${fmtInt(m1Port)})</div>
                 </div>
 
-                <div class="kpi-card cyan">
-                    <div class="kpi-top-row">
-                        <div class="kpi-main-col">
-                            <div class="kpi-label"><span>Ticket Médio de Entrada</span></div>
-                            <div class="kpi-value" style="color:#002A72;">${fmtMoneyBR(curTM)}</div>
-                        </div>
-                        <div class="kpi-badges-stack">
-                            <span class="badge ${m1TM > 0 ? (tmDiff >= 0 ? 'badge-good' : 'badge-bad') : 'badge-cyan'}">vs M-1: ${m1TM > 0 ? ((tmDiff >= 0 ? '+' : '') + fmtPct(tmDiff)) : '-'}</span>
-                            <span class="badge badge-cyan">M-1: ${fmtMoneyBR(m1TM)}</span>
-                        </div>
-                    </div>
-                    <div class="kpi-sub">Base avaliada: <b>${fmtInt(curRcnt)}</b> ofertas em ${STATE.config.mesVigente || 'Nov/26'}</div>
-                </div>
-
                 <div class="kpi-card coral">
                     <div class="kpi-top-row">
                         <div class="kpi-main-col">
-                            <div class="kpi-label"><span>Mix de Chip (E-SIM vs. Físico)</span></div>
-                            <div class="kpi-value" style="font-size:1.14rem;">${fmtPct(esimShare)} <span style="font-size:0.82rem; color:#0369A1; font-weight:700;">E-SIM (${fmtInt(chipCur['E-SIM'])})</span></div>
+                            <div class="kpi-label"><span>Ticket Médio &amp; Mix E-SIM</span></div>
+                            <div class="kpi-value" style="color:#002A72;">${fmtMoneyBR(curTM)}</div>
                         </div>
-                        <div class="kpi-badges-stack" style="width:112px;">
-                            <span class="badge badge-cyan">Físico: ${fmtInt(chipCur['Físico'])}</span>
-                            <span class="badge badge-good">Total: ${fmtInt(chipKnownTot)}</span>
+                        <div class="kpi-badges-stack" style="width:114px;">
+                            <span class="badge ${m1TM > 0 ? (tmDiff >= 0 ? 'badge-good' : 'badge-bad') : 'badge-cyan'}">TM M-1: ${fmtMoneyBR(m1TM)}</span>
+                            <span class="badge badge-good">E-SIM: ${fmtPct(esimShare)} (${fmtInt(chipCur['E-SIM'])})</span>
                         </div>
                     </div>
-                    <div class="kpi-sub">Participação digital sobre chips identificados (${regScopeTxt})</div>
+                    <div class="kpi-sub">Físico: <b>${fmtInt(chipCur['Físico'])}</b> • Ofertas avaliadas: <b>${fmtInt(curRcnt)}</b></div>
                 </div>
             </div>`;
         }
@@ -8290,33 +8305,58 @@
             const tx = gBkt.v > 0 ? (gBkt.a / gBkt.v) * 100 : 0;
             const topUnitObj = Object.values(byUnit).sort((a, b) => b.a - a.a)[0];
             const topCanalObj = Object.values(byCanal).sort((a, b) => b.a - a.a)[0];
+            const ativTitle = (prodActiveGroup === 'Internet') ? 'Instalações' : 'Ativações';
 
-            if (topEl) {
-                topEl.innerHTML = `<div class="kpi-grid">
-                    <div class="kpi-card">
+            let card3Html = '';
+            let card4Html = '';
+
+            if (prodActiveGroup === 'Internet') {
+                const rnBkt  = byRawGrp['Rede Neutra']  || { v: 0, a: 0, vHist: Array(nM).fill(0), aHist: Array(nM).fill(0) };
+                const b2sBkt = byRawGrp['Internet B2S'] || { v: 0, a: 0, vHist: Array(nM).fill(0), aHist: Array(nM).fill(0) };
+
+                const rnShareA    = gBkt.a > 0 ? (rnBkt.a / gBkt.a) * 100 : 0;
+                const rnShareV    = gBkt.v > 0 ? (rnBkt.v / gBkt.v) * 100 : 0;
+                const rnM1A       = rnBkt.aHist[m1Idx] || 0;
+                const rnM1ShareA  = m1A > 0 ? (rnM1A / m1A) * 100 : 0;
+                const rnDiffPp    = m1A > 0 ? (rnShareA - rnM1ShareA) : 0;
+
+                const b2sShareA   = gBkt.a > 0 ? (b2sBkt.a / gBkt.a) * 100 : 0;
+                const b2sShareV   = gBkt.v > 0 ? (b2sBkt.v / gBkt.v) * 100 : 0;
+                const b2sM1A      = b2sBkt.aHist[m1Idx] || 0;
+                const b2sM1ShareA = m1A > 0 ? (b2sM1A / m1A) * 100 : 0;
+                const b2sDiffPp   = m1A > 0 ? (b2sShareA - b2sM1ShareA) : 0;
+
+                card3Html = `
+                    <div class="kpi-card green">
                         <div class="kpi-top-row">
                             <div class="kpi-main-col">
-                                <div class="kpi-label"><span>Ativações ${prodActiveGroup}${duTag}</span></div>
-                                <div class="kpi-value">${fmtMetricVal(isPerDu ? gBkt.a / curDivisor : gBkt.a, isPerDu)} <span style="font-size:0.90rem; font-weight:700; color:var(--evo-blue);">/ ${fmtMetricVal(isPerDu ? pa / curDivisor : pa, isPerDu)}</span></div>
+                                <div class="kpi-label"><span>Peso Rede Neutra / Internet</span></div>
+                                <div class="kpi-value" style="color:var(--evo-blue);">${gBkt.a > 0 ? fmtPct(rnShareA) : '0,0%'} <span style="font-size:0.86rem; font-weight:700; color:#0F172A;">(${fmtMetricVal(isPerDu ? rnBkt.a / curDivisor : rnBkt.a, isPerDu)})</span></div>
                             </div>
-                            <div class="kpi-badges-stack">
-                                <span class="badge ${m1A > 0 ? (m1PctA >= 0 ? 'badge-good' : 'badge-bad') : 'badge-cyan'}">M-1: ${m1A > 0 ? ((m1PctA >= 0 ? '+' : '') + fmtPct(m1PctA)) : '-'}</span>
+                            <div class="kpi-badges-stack" style="width:118px;">
+                                <span class="badge badge-cyan">Vnd: ${gBkt.v > 0 ? fmtPct(rnShareV) : '0,0%'} (${fmtInt(rnBkt.v)})</span>
+                                <span class="badge ${m1A > 0 ? (rnDiffPp >= 0 ? 'badge-good' : 'badge-warn') : 'badge-cyan'}">M-1: ${m1A > 0 ? fmtPct(rnM1ShareA) : '-'}</span>
                             </div>
                         </div>
-                        <div class="kpi-sub">M-1 (${mesM1Nome}): <b>${fmtMetricVal(isPerDu ? m1A / (duArr[m1Idx] || 22) : m1A, isPerDu)}</b> | ${regScopeTxt}</div>
-                    </div>
-                    <div class="kpi-card cyan">
+                        <div class="kpi-sub">Inst. Rede Neutra / Total (${fmtMetricVal(isPerDu ? gBkt.a / curDivisor : gBkt.a, isPerDu)}) • M-1 (${mesM1Nome}): <b>${fmtInt(rnM1A)}</b></div>
+                    </div>`;
+
+                card4Html = `
+                    <div class="kpi-card coral">
                         <div class="kpi-top-row">
                             <div class="kpi-main-col">
-                                <div class="kpi-label"><span>Vendas ${prodActiveGroup}${duTag}</span></div>
-                                <div class="kpi-value">${fmtMetricVal(isPerDu ? gBkt.v / curDivisor : gBkt.v, isPerDu)} <span style="font-size:0.90rem; font-weight:700; color:var(--evo-navy);">/ ${fmtMetricVal(isPerDu ? pv / curDivisor : pv, isPerDu)}</span></div>
+                                <div class="kpi-label"><span>Peso Internet B2S / Internet</span></div>
+                                <div class="kpi-value" style="color:var(--green);">${gBkt.a > 0 ? fmtPct(b2sShareA) : '0,0%'} <span style="font-size:0.86rem; font-weight:700; color:#0F172A;">(${fmtMetricVal(isPerDu ? b2sBkt.a / curDivisor : b2sBkt.a, isPerDu)})</span></div>
                             </div>
-                            <div class="kpi-badges-stack">
-                                <span class="badge ${m1V > 0 ? (m1PctV >= 0 ? 'badge-good' : 'badge-bad') : 'badge-cyan'}">M-1: ${m1V > 0 ? ((m1PctV >= 0 ? '+' : '') + fmtPct(m1PctV)) : '-'}</span>
+                            <div class="kpi-badges-stack" style="width:118px;">
+                                <span class="badge badge-cyan">Vnd: ${gBkt.v > 0 ? fmtPct(b2sShareV) : '0,0%'} (${fmtInt(b2sBkt.v)})</span>
+                                <span class="badge ${m1A > 0 ? (b2sDiffPp >= 0 ? 'badge-good' : 'badge-warn') : 'badge-cyan'}">M-1: ${m1A > 0 ? fmtPct(b2sM1ShareA) : '-'}</span>
                             </div>
                         </div>
-                        <div class="kpi-sub">M-1 (${mesM1Nome}): <b>${fmtMetricVal(isPerDu ? m1V / (duArr[m1Idx] || 22) : m1V, isPerDu)}</b></div>
-                    </div>
+                        <div class="kpi-sub">Inst. B2S / Total (${fmtMetricVal(isPerDu ? gBkt.a / curDivisor : gBkt.a, isPerDu)}) • M-1 (${mesM1Nome}): <b>${fmtInt(b2sM1A)}</b></div>
+                    </div>`;
+            } else {
+                card3Html = `
                     <div class="kpi-card green">
                         <div class="kpi-top-row">
                             <div class="kpi-main-col">
@@ -8326,7 +8366,9 @@
                             <div class="kpi-badges-stack"><span class="badge ${getEficBadgeClass(tx)}">Conversão</span></div>
                         </div>
                         <div class="kpi-sub">Ativações sobre Vendas Brutas no mês</div>
-                    </div>
+                    </div>`;
+
+                card4Html = `
                     <div class="kpi-card coral">
                         <div class="kpi-top-row">
                             <div class="kpi-main-col">
@@ -8338,7 +8380,38 @@
                             </div>
                         </div>
                         <div class="kpi-sub">1ª Unidade: <b>${topUnitObj ? topUnitObj.key + ' (' + fmtInt(topUnitObj.a) + ' ativ.)' : '-'}</b></div>
+                    </div>`;
+            }
+
+            if (topEl) {
+                topEl.innerHTML = `<div class="kpi-grid">
+                    <div class="kpi-card cyan">
+                        <div class="kpi-top-row">
+                            <div class="kpi-main-col">
+                                <div class="kpi-label"><span>Vendas ${prodActiveGroup}${duTag}</span></div>
+                                <div class="kpi-value">${fmtMetricVal(isPerDu ? gBkt.v / curDivisor : gBkt.v, isPerDu)} <span style="font-size:0.90rem; font-weight:700; color:var(--evo-navy);">/ ${fmtMetricVal(isPerDu ? pv / curDivisor : pv, isPerDu)}</span></div>
+                            </div>
+                            <div class="kpi-badges-stack">
+                                <span class="badge ${m1V > 0 ? (m1PctV >= 0 ? 'badge-good' : 'badge-bad') : 'badge-cyan'}">M-1: ${m1V > 0 ? ((m1PctV >= 0 ? '+' : '') + fmtPct(m1PctV)) : '-'}</span>
+                            </div>
+                        </div>
+                        <div class="kpi-sub">M-1 (${mesM1Nome}): <b>${fmtMetricVal(isPerDu ? m1V / (duArr[m1Idx] || 22) : m1V, isPerDu)}</b> | ${regScopeTxt}</div>
                     </div>
+                    <div class="kpi-card">
+                        <div class="kpi-top-row">
+                            <div class="kpi-main-col">
+                                <div class="kpi-label"><span>${ativTitle} ${prodActiveGroup}${duTag}</span></div>
+                                <div class="kpi-value">${fmtMetricVal(isPerDu ? gBkt.a / curDivisor : gBkt.a, isPerDu)} <span style="font-size:0.90rem; font-weight:700; color:var(--evo-blue);">/ ${fmtMetricVal(isPerDu ? pa / curDivisor : pa, isPerDu)}</span></div>
+                            </div>
+                            <div class="kpi-badges-stack">
+                                <span class="badge ${getEficBadgeClass(tx)}">Conv.: ${fmtPct(tx)}</span>
+                                <span class="badge ${m1A > 0 ? (m1PctA >= 0 ? 'badge-good' : 'badge-bad') : 'badge-cyan'}">M-1: ${m1A > 0 ? ((m1PctA >= 0 ? '+' : '') + fmtPct(m1PctA)) : '-'}</span>
+                            </div>
+                        </div>
+                        <div class="kpi-sub">M-1 (${mesM1Nome}): <b>${fmtMetricVal(isPerDu ? m1A / (duArr[m1Idx] || 22) : m1A, isPerDu)}</b></div>
+                    </div>
+                    ${card3Html}
+                    ${card4Html}
                 </div>`;
             }
         }
@@ -10761,6 +10834,9 @@
         return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), Number(m[4]), Number(m[5]), Number(m[6])).getTime() || 0;
     }
 
+    let cloudMigrationPushedOnce = false;
+    let lastRenderedStateSig = '';
+
     function applyRemoteState(remote, fromCloud = false) {
         if (!remote || !remote.config || !remote.bl || !remote.agents) return false;
         // Verifica revogação instantânea vinda da nuvem
@@ -10813,10 +10889,9 @@
                 Number(remote.historico.CO.metasNov.altas && remote.historico.CO.metasNov.altas['Inside Sales']) === 0;
             const remAgoWrong = remote.historico && remote.historico.CO && Array.isArray(remote.historico.CO.metasAltasHist) &&
                 remote.historico.CO.metasAltasHist[7] === 8796;
-            if (didMerge || remCoHistMissing || remCoChHistMissing || remCoUnitsMissing || remCoMvUnitsMissing || remCoMetasMissing || remAgoWrong) {
+            if (didMerge) {
                 saveLocalStateCache();
                 if (dashboardBooted) renderAll();
-                setTimeout(() => { pushCloudState(false); }, 600);
             }
             return false;
         }
@@ -10865,7 +10940,7 @@
                 fixedAgoCloud = true;
             }
             if (fixedAgoCloud) {
-                setTimeout(() => { pushCloudState(false); }, 600);
+                needsCloudMigrationPush = true;
             }
         }
         if (remote.agents) {
@@ -11000,9 +11075,14 @@
                 });
             });
         }
-        if (needsCloudMigrationPush) {
-            stampLastUpdate();
-            setTimeout(() => { pushCloudState(false); }, 700);
+        if (needsCloudMigrationPush && !cloudMigrationPushedOnce && window.location.protocol !== 'file:') {
+            cloudMigrationPushedOnce = true;
+            setTimeout(() => {
+                if (firebaseAuthReady && firebase.auth().currentUser) {
+                    stampLastUpdate();
+                    pushCloudState(false);
+                }
+            }, 1500);
         }
         localDirtySinceLastSync = false;
         normalizeLeaderCapacityState();
