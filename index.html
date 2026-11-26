@@ -2648,6 +2648,7 @@
     function attachRealtimeDatabaseListener() {
         if (typeof firebase === 'undefined' || typeof firebase.database !== 'function') return;
         if (!ensureFirebaseInit()) return;
+        if (firebaseAuthReady && (!firebase.auth || !firebase.auth().currentUser) && window.location.protocol !== 'file:') return;
         const cloudUrl = normalizeCloudUrl((STATE.config && STATE.config.cloudSyncUrl) || '');
         if (!cloudUrl) return;
         const dbPath = getFirebaseDbPath();
@@ -2665,9 +2666,11 @@
                 if (!remote || !remote.config) return;
                 if (isUserActivelyEditing()) {
                     pendingRemoteSnapshot = remote;
+                    if (typeof resolveInitialCloudWait === 'function') resolveInitialCloudWait();
                     return;
                 }
                 applyRemoteState(remote, true);
+                if (typeof resolveInitialCloudWait === 'function') resolveInitialCloudWait();
             }, (err) => {
                 console.warn('Firebase RTDB live listener fallback to polling:', err && err.message);
                 firebaseDbListenerAttached = false;
@@ -3066,6 +3069,7 @@
             if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
                 // Fallback automático para redirect em navegadores móveis que bloqueiam pop-up
                 try {
+                    try { sessionStorage.setItem('evo_oauth_redirect_pending', '1'); } catch (e) {}
                     const provider = new firebase.auth.GoogleAuthProvider();
                     provider.setCustomParameters({ prompt: 'select_account' });
                     await firebase.auth().signInWithRedirect(provider);
@@ -3177,97 +3181,179 @@
             localStorage.setItem('evo_authorized_ts', String(Date.now()));
         } catch (ex) {}
         showAuthGateMessage('', '');
-        grantDomainUI(email, false);
         try {
             await bootDashboard();
+            grantDomainUI(email, false);
         } catch (err) {
             console.error('Erro no boot:', err);
+            grantDomainUI(email, false);
         } finally {
             if (btn) btn.disabled = false;
             if (btnLabel) btnLabel.textContent = 'Acessar Painel';
         }
     }
 
-    function saveLocalStateCache() {
-        try {
-            if (STATE && STATE.config && STATE.config.lastUpdate && STATE.config.lastUpdate !== '00/00/0000 00:00:00') {
-                localStorage.setItem('evo_cached_state_v4', JSON.stringify(STATE));
-            }
-        } catch (e) {}
+    // Remove caches antigos do localStorage para evitar estouro da cota de 5MB do navegador
+    try {
+        ['evo_cached_state', 'evo_cached_state_v1', 'evo_cached_state_v2', 'evo_cached_state_v3'].forEach(k => localStorage.removeItem(k));
+    } catch (e) {}
+
+    let evoIdbPromise = null;
+    let resolveInitialCloudWait = null;
+
+    function openEvoIdb() {
+        if (evoIdbPromise) return evoIdbPromise;
+        evoIdbPromise = new Promise((resolve) => {
+            if (typeof indexedDB === 'undefined') { resolve(null); return; }
+            try {
+                const req = indexedDB.open('evo_dashboard_cache_v1', 1);
+                req.onupgradeneeded = (ev) => {
+                    const db = ev.target.result;
+                    if (!db.objectStoreNames.contains('states')) db.createObjectStore('states');
+                };
+                req.onsuccess = (ev) => resolve(ev.target.result);
+                req.onerror = () => resolve(null);
+            } catch (e) { resolve(null); }
+        });
+        return evoIdbPromise;
     }
 
-    function restoreLocalStateCache() {
-        try {
-            const raw = localStorage.getItem('evo_cached_state_v4');
-            if (!raw) return false;
-            const cached = JSON.parse(raw);
-            if (!cached || !cached.config || !cached.bl || !cached.agents) return false;
-            const cacheTs = parseUpdateTimestamp(cached.config.lastUpdate || '');
-            const localTs = parseUpdateTimestamp(STATE.config.lastUpdate || '');
-            if (cacheTs > localTs) {
-                Object.assign(STATE.config, cached.config);
-                if (cached.historico) STATE.historico = cached.historico;
-                if (cached.agents) STATE.agents = cached.agents;
-                if (cached.bl) STATE.bl = cached.bl;
-                if (cached.movel) STATE.movel = cached.movel;
-                if (cached.unitsHist) STATE.unitsHist = cached.unitsHist;
-                if (cached.movelHist) STATE.movelHist = cached.movelHist;
-                if (cached.movelUnitsHist) STATE.movelUnitsHist = cached.movelUnitsHist;
-                if (cached.movelSellerHist) STATE.movelSellerHist = cached.movelSellerHist;
-                if (cached.sellerHist) STATE.sellerHist = cached.sellerHist;
-                if (cached.produtos && Array.isArray(cached.produtos.rows) && cached.produtos.rows.length > 0) STATE.produtos = cached.produtos;
-                if (cached.movelDet && Array.isArray(cached.movelDet.rows) && cached.movelDet.rows.length > 0) STATE.movelDet = cached.movelDet;
-                if (cached.movelPort && Array.isArray(cached.movelPort.rows)) STATE.movelPort = cached.movelPort;
-                ensureRegionSkeletons();
-                mergeEmbeddedHistDefaults();
-                return true;
-            }
-        } catch (e) {}
+    function applyCachedObjectToState(cached) {
+        if (!cached || !cached.config || !cached.bl || !cached.agents) return false;
+        const cacheTs = parseUpdateTimestamp(cached.config.lastUpdate || '');
+        const localTs = parseUpdateTimestamp(STATE.config.lastUpdate || '');
+        const cacheRev = Number(cached.config.syncRev || 0);
+        const localRev = Number(STATE.config.syncRev || 0);
+        if (cacheTs > localTs || (cacheTs === localTs && cacheRev > localRev)) {
+            Object.assign(STATE.config, cached.config);
+            if (cached.historico) STATE.historico = cached.historico;
+            if (cached.agents) STATE.agents = cached.agents;
+            if (cached.bl) STATE.bl = cached.bl;
+            if (cached.movel) STATE.movel = cached.movel;
+            if (cached.unitsHist) STATE.unitsHist = cached.unitsHist;
+            if (cached.movelHist) STATE.movelHist = cached.movelHist;
+            if (cached.movelUnitsHist) STATE.movelUnitsHist = cached.movelUnitsHist;
+            if (cached.movelSellerHist) STATE.movelSellerHist = cached.movelSellerHist;
+            if (cached.sellerHist) STATE.sellerHist = cached.sellerHist;
+            if (cached.churn) STATE.churn = cached.churn;
+            if (cached.produtos && Array.isArray(cached.produtos.rows) && cached.produtos.rows.length > 0) STATE.produtos = cached.produtos;
+            if (cached.movelDet && Array.isArray(cached.movelDet.rows) && cached.movelDet.rows.length > 0) STATE.movelDet = cached.movelDet;
+            if (cached.movelPort && Array.isArray(cached.movelPort.rows)) STATE.movelPort = cached.movelPort;
+            ensureRegionSkeletons();
+            ensureChurnSkeleton();
+            mergeEmbeddedHistDefaults();
+            return true;
+        }
         return false;
     }
 
+    function saveLocalStateCache() {
+        if (!STATE || !STATE.config || !STATE.config.lastUpdate || STATE.config.lastUpdate === '00/00/0000 00:00:00') return;
+        // 1. Gravação instantânea no IndexedDB (suporta qualquer volume sem limite de 5MB e sem travar a thread principal)
+        openEvoIdb().then(db => {
+            if (!db) return;
+            try {
+                const tx = db.transaction('states', 'readwrite');
+                tx.objectStore('states').put(STATE, 'current');
+            } catch (e) {}
+        });
+        // 2. Fallback secundário no localStorage em idle frame
+        const saveLs = () => {
+            try { localStorage.setItem('evo_cached_state_v4', JSON.stringify(STATE)); } catch (e) {}
+        };
+        if (typeof requestIdleCallback === 'function') requestIdleCallback(saveLs, { timeout: 1500 });
+        else setTimeout(saveLs, 150);
+    }
+
+    async function restoreLocalStateCacheAsync() {
+        let restored = false;
+        try {
+            const db = await Promise.race([openEvoIdb(), new Promise(r => setTimeout(() => r(null), 100))]);
+            if (db) {
+                const idbCached = await new Promise(resolve => {
+                    try {
+                        const tx = db.transaction('states', 'readonly');
+                        const req = tx.objectStore('states').get('current');
+                        req.onsuccess = () => resolve(req.result || null);
+                        req.onerror = () => resolve(null);
+                    } catch (e) { resolve(null); }
+                });
+                if (idbCached && applyCachedObjectToState(idbCached)) restored = true;
+            }
+        } catch (e) {}
+        if (!restored) {
+            try {
+                const raw = localStorage.getItem('evo_cached_state_v4');
+                if (raw) {
+                    const lsCached = JSON.parse(raw);
+                    if (applyCachedObjectToState(lsCached)) restored = true;
+                }
+            } catch (e) {}
+        }
+        return restored;
+    }
+
+    let bootDashboardPromise = null;
     async function bootDashboard() {
         if (dashboardBooted) {
             attachRealtimeDatabaseListener();
-            checkLiveUpdates(true).catch(() => {});
+            if (!firebaseDbListenerAttached) checkLiveUpdates(false).catch(() => {});
             return;
         }
-        dashboardBooted = true;
-        adminUnlocked = false;
-        const p10L = document.getElementById('p10-locked');
-        const p10U = document.getElementById('p10-unlocked');
-        if (p10L) p10L.style.display = 'flex';
-        if (p10U) p10U.style.display = 'none';
+        if (bootDashboardPromise) return bootDashboardPromise;
 
-        restoreLocalStateCache();
-        ensureRegionSkeletons();
-        ensureChurnSkeleton();
-        mergeEmbeddedHistDefaults();
-        normalizeLeaderCapacityState();
-        syncAllAgentGoalsFromMatrix();
+        bootDashboardPromise = (async () => {
+            dashboardBooted = true;
+            adminUnlocked = false;
+            const p10L = document.getElementById('p10-locked');
+            const p10U = document.getElementById('p10-unlocked');
+            if (p10L) p10L.style.display = 'flex';
+            if (p10U) p10U.style.display = 'none';
 
-        bindRealtimeWakeupListeners();
-        attachRealtimeDatabaseListener();
+            await restoreLocalStateCacheAsync();
+            ensureRegionSkeletons();
+            ensureChurnSkeleton();
+            mergeEmbeddedHistDefaults();
+            normalizeLeaderCapacityState();
+            syncAllAgentGoalsFromMatrix();
 
-        if (STATE.config.cloudSyncUrl) {
-            try {
-                await Promise.race([
-                    checkLiveUpdates(true),
-                    new Promise(res => setTimeout(res, 2500))
-                ]);
-            } catch (e) {}
-        }
+            bindRealtimeWakeupListeners();
+            attachRealtimeDatabaseListener();
 
-        try { openPanel(1); } catch (e) {}
-        try { renderAll(); } catch (e) { console.error('Erro ao renderizar painéis:', e); }
+            // Só aguarda rede antes do primeiro paint se for 1º acesso absoluto num HTML Blindado sem cache local
+            const isColdCloudOnly = (!STATE.config.lastUpdate || STATE.config.lastUpdate === '00/00/0000 00:00:00');
+            if (isColdCloudOnly && STATE.config.cloudSyncUrl) {
+                try {
+                    const wsWait = new Promise(res => { resolveInitialCloudWait = res; });
+                    await Promise.race([
+                        wsWait,
+                        checkLiveUpdates(true),
+                        new Promise(res => setTimeout(res, 2200))
+                    ]);
+                    resolveInitialCloudWait = null;
+                } catch (e) {}
+            } else if (STATE.config.cloudSyncUrl) {
+                // Sincronização em tempo real não-bloqueante: WebSocket primário + checagem leve de metadados
+                setTimeout(() => {
+                    attachRealtimeDatabaseListener();
+                    if (!firebaseDbListenerAttached) checkLiveUpdates(false).catch(() => {});
+                }, 40);
+            }
 
-        setInterval(async () => {
-            if (firebaseDbListenerAttached) return;
-            await checkLiveUpdates(false);
-        }, 15000);
+            try { openPanel(activePanelIdx || 1); } catch (e) {}
+            try { renderAll(); } catch (e) { console.error('Erro ao renderizar painéis:', e); }
+            saveLocalStateCache();
+
+            setInterval(async () => {
+                if (firebaseDbListenerAttached) return;
+                await checkLiveUpdates(false);
+            }, 15000);
+        })();
+
+        return bootDashboardPromise;
     }
 
-    async function verifyActiveFirebaseUser(user, freshSignIn = false) {
+    async function verifyActiveFirebaseUser(user, freshSignIn = false, silentRecheck = false) {
         if (!user || !user.email) return false;
         const email = user.email.trim().toLowerCase();
         if (!isValidCorporateEmail(email)) {
@@ -3297,20 +3383,32 @@
                 await forceLogoutCorporate('Sua sessão corporativa de ' + maxDays + ' dias expirou. Clique em <b>Entrar com o Google</b> para renovar.');
                 return false;
             }
-            try {
-                await user.reload();
-                await user.getIdToken(true);
-            } catch (err) {
-                await forceLogoutCorporate('Sua conta Google corporativa foi suspensa ou expirada. Faça login novamente.');
-                return false;
-            }
             if (!ts) {
                 try { localStorage.setItem('evo_authorized_ts', String(Date.now())); } catch (ex) {}
             }
         }
-        // Libera a interface imediatamente antes de renderizar os gráficos
-        grantDomainUI(email, true);
-        await bootDashboard();
+
+        if (!silentRecheck) {
+            // Conecta o WebSocket autenticado, renderiza toda a aba ativa do cache/memória e SÓ ENTÃO remove o #evo-auth-gate!
+            attachRealtimeDatabaseListener();
+            await bootDashboard();
+            grantDomainUI(email, true);
+        }
+
+        // Revalida status da conta Google Workspace em background (zero atraso visual na entrada!)
+        if (!freshSignIn) {
+            (async () => {
+                try {
+                    await user.reload();
+                    await user.getIdToken(silentRecheck);
+                } catch (err) {
+                    const code = (err && err.code) || '';
+                    if (code === 'auth/user-disabled' || code === 'auth/user-not-found' || code === 'auth/user-token-expired' || code === 'auth/invalid-user-token') {
+                        await forceLogoutCorporate('Sua conta Google corporativa foi suspensa ou expirada. Faça login novamente.');
+                    }
+                }
+            })();
+        }
         return true;
     }
 
@@ -3909,20 +4007,52 @@
         }
     }
 
+    let activePanelIdx = 1;
+    const dirtyPanels = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12]);
+    let idlePrewarmTimer = null;
+
+    function renderPanelByIdx(pIdx) {
+        const n = Number(pIdx) || 1;
+        if (n === 1) { safeRenderFn(renderConsolidado); dirtyPanels.delete(1); }
+        else if (n === 2) { safeRenderFn(renderDiario); dirtyPanels.delete(2); }
+        else if (n === 3) { safeRenderFn(renderUnidades); dirtyPanels.delete(3); }
+        else if (n === 4) { safeRenderFn(renderCanaisPanel); dirtyPanels.delete(4); }
+        else if (n === 5) { safeRenderFn(renderMovel); dirtyPanels.delete(5); }
+        else if (n === 12) { safeRenderFn(renderProdutos); dirtyPanels.delete(12); }
+        else if (n === 6 || n === 7 || n === 8) {
+            safeRenderFn(renderRankings);
+            dirtyPanels.delete(6); dirtyPanels.delete(7); dirtyPanels.delete(8);
+        }
+        else if (n === 9 || n === 10) {
+            safeRenderFn(renderAdminAndSim);
+            dirtyPanels.delete(9); dirtyPanels.delete(10);
+        }
+    }
+
+    function updateHeaderIndicatorsFast() {
+        try {
+            const { du } = getRegionMetrics();
+            const duEl = document.getElementById('du-indicator');
+            if (duEl && du) duEl.textContent = `DU: ${du.duCorridos} / ${du.duTotal} (Fator ${du.fator.toFixed(2).replace('.', ',')}x)`;
+            const updEl = document.getElementById('last-update-badge');
+            if (updEl) updEl.innerHTML = `<i class="fa-solid fa-square-check"></i> <span><span class="live-dot" title="Sincronização em tempo real ativa"></span>Última Atualização<br>${STATE.config.lastUpdate || 'N/A'}</span>`;
+        } catch (e) {}
+    }
+
     function openPanel(idx) {
+        activePanelIdx = Number(idx) || 1;
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => {
             const dp = b.getAttribute('data-panel');
-            b.classList.toggle('active', dp ? Number(dp) === Number(idx) : false);
+            b.classList.toggle('active', dp ? Number(dp) === activePanelIdx : false);
         });
-        const targetEl = document.getElementById('p' + idx);
+        const targetEl = document.getElementById('p' + activePanelIdx);
         if (targetEl) targetEl.classList.add('active');
-        syncHeaderContextualControls(idx);
-        if (idx === 1 && typeof renderConsolidado === 'function') renderConsolidado();
-        if (idx === 3 && typeof renderUnidades === 'function') renderUnidades();
-        if (idx === 5 && typeof renderMovel === 'function') renderMovel();
-        if (idx === 12 && typeof renderProdutos === 'function') renderProdutos();
-        setTimeout(() => window.dispatchEvent(new Event('resize')), 40);
+        syncHeaderContextualControls(activePanelIdx);
+        if (dirtyPanels.has(activePanelIdx) || activePanelIdx === 1 || activePanelIdx === 3 || activePanelIdx === 5 || activePanelIdx === 12) {
+            renderPanelByIdx(activePanelIdx);
+        }
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 20);
     }
 
     function filterGuideSection(sec, btnEl) {
@@ -10666,6 +10796,9 @@
             exportState.bl = [];
             exportState.movel = [];
             exportState.agents = [];
+            if (exportState.produtos) exportState.produtos.rows = [];
+            if (exportState.movelDet) exportState.movelDet.rows = [];
+            if (exportState.movelPort) { exportState.movelPort.rows = []; exportState.movelPort.bySeller = { CO: {}, RJ: {}, RS: {}, SP: {} }; }
             exportState.config.lastUpdate = '00/00/0000 00:00:00';
         }
         cloneDoc.querySelector('#embedded-state').textContent = JSON.stringify(exportState);
@@ -11488,15 +11621,32 @@
         try { if (typeof fn === 'function') fn(); } catch (err) { console.error('[EVO Render Guard]', err); }
     }
 
+    function scheduleIdleDirtyPrewarm() {
+        if (idlePrewarmTimer) clearTimeout(idlePrewarmTimer);
+        const bgQueue = [2, 4, 6, 9];
+        const step = () => {
+            const nextP = bgQueue.find(p => dirtyPanels.has(p));
+            if (!nextP) return;
+            renderPanelByIdx(nextP);
+            if (bgQueue.some(p => dirtyPanels.has(p))) {
+                idlePrewarmTimer = setTimeout(() => {
+                    if (typeof requestIdleCallback === 'function') requestIdleCallback(step, { timeout: 600 });
+                    else step();
+                }, 70);
+            }
+        };
+        idlePrewarmTimer = setTimeout(() => {
+            if (typeof requestIdleCallback === 'function') requestIdleCallback(step, { timeout: 600 });
+            else step();
+        }, 100);
+    }
+
     function renderAll() {
-        safeRenderFn(renderConsolidado);
-        safeRenderFn(renderDiario);
-        safeRenderFn(renderUnidades);
-        safeRenderFn(renderCanaisPanel);
-        safeRenderFn(renderMovel);
-        safeRenderFn(renderProdutos);
-        safeRenderFn(renderRankings);
-        safeRenderFn(renderAdminAndSim);
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12].forEach(p => dirtyPanels.add(p));
+        updateHeaderIndicatorsFast();
+        renderPanelByIdx(activePanelIdx || 1);
+        if (adminUnlocked && activePanelIdx !== 10) renderPanelByIdx(10);
+        scheduleIdleDirtyPrewarm();
     }
     
     (async function initAuthAndBoot() {
@@ -11512,16 +11662,40 @@
             if (googleBox) googleBox.style.display = 'none';
             if (form) form.style.display = 'none';
 
-            // 1. Captura retorno de redirect do Google Sign-In (caso popup tenha sido bloqueado no celular)
+            // Fast-path otimista no F5/abertura: se já há sessão corporativa válida salva neste navegador,
+            // restaura o cache IndexedDB + renderiza o painel IMEDIATAMENTE (~20ms) sem esperar handshake de rede,
+            // enquanto o Firebase Auth confirma o token e conecta o WebSocket em paralelo!
+            let optimisticAllowed = false;
             try {
-                const redirCred = await firebase.auth().getRedirectResult();
-                if (redirCred && redirCred.user) {
-                    await verifyActiveFirebaseUser(redirCred.user, true);
+                const cachedEmail = (localStorage.getItem('evo_authorized_email') || '').trim().toLowerCase();
+                const cachedTs = Number(localStorage.getItem('evo_authorized_ts') || '0');
+                const maxDays = Number(STATE.config.sessionMaxDays) || 15;
+                if (cachedEmail && isValidCorporateEmail(cachedEmail) && !isEmailBlocked(cachedEmail) && cachedTs > 0 && (Date.now() - cachedTs) <= (maxDays * 86400000)) {
+                    optimisticAllowed = true;
+                    bootDashboard().then(() => {
+                        if (optimisticAllowed && STATE.config.lastUpdate && STATE.config.lastUpdate !== '00/00/0000 00:00:00') {
+                            grantDomainUI(cachedEmail, false);
+                        }
+                    }).catch(() => {});
+                }
+            } catch (e) {}
+
+            // 1. Só consulta getRedirectResult se houve redirecionamento OAuth pendente (elimina ~200ms no F5)
+            let hadPendingRedirect = false;
+            try { hadPendingRedirect = (sessionStorage.getItem('evo_oauth_redirect_pending') === '1'); } catch (e) {}
+            if (hadPendingRedirect) {
+                try { sessionStorage.removeItem('evo_oauth_redirect_pending'); } catch (e) {}
+                try {
+                    const redirCred = await firebase.auth().getRedirectResult();
+                    if (redirCred && redirCred.user) {
+                        await verifyActiveFirebaseUser(redirCred.user, true, false);
+                        return;
+                    }
+                } catch (redirErr) {
+                    optimisticAllowed = false;
+                    lockScreenToAuthGate('Não foi possível concluir o login com Google: ' + (redirErr.message || redirErr.code));
                     return;
                 }
-            } catch (redirErr) {
-                lockScreenToAuthGate('Não foi possível concluir o login com Google: ' + (redirErr.message || redirErr.code));
-                return;
             }
 
             // 2. Verifica se o usuário abriu um link de e-mail alternativo
@@ -11534,15 +11708,17 @@
                         window.history.replaceState({}, document.title, window.location.href.split('?')[0].split('#')[0]);
                         try { localStorage.removeItem('evo_email_for_signin'); } catch (ex) {}
                         if (cred && cred.user) {
-                            await verifyActiveFirebaseUser(cred.user, true);
+                            await verifyActiveFirebaseUser(cred.user, true, false);
                             return;
                         }
                     } catch (err) {
+                        optimisticAllowed = false;
                         window.history.replaceState({}, document.title, window.location.href.split('?')[0].split('#')[0]);
                         lockScreenToAuthGate('Link expirado ou já utilizado. Clique em <b>Entrar com o Google</b>.');
                         return;
                     }
                 } else {
+                    optimisticAllowed = false;
                     pendingEmailLinkCompletion = true;
                     lockScreenToAuthGate('');
                     if (btnLabel) btnLabel.textContent = 'Confirmar E-mail e Entrar';
@@ -11552,19 +11728,24 @@
                 }
             }
 
-            // 3. Observa sessão ativa do Google Workspace
+            // 3. Observa sessão ativa do Google Workspace e conecta WebSocket em tempo real
             firebase.auth().onAuthStateChanged(async (user) => {
                 if (user) {
-                    await verifyActiveFirebaseUser(user, false);
+                    const ok = await verifyActiveFirebaseUser(user, false, false);
+                    if (ok) {
+                        attachRealtimeDatabaseListener();
+                        if (!firebaseDbListenerAttached) checkLiveUpdates(false).catch(() => {});
+                    }
                 } else if (!pendingEmailLinkCompletion) {
+                    optimisticAllowed = false;
                     lockScreenToAuthGate('');
                 }
             });
 
-            // Revalida token Google no servidor a cada 10 minutos enquanto o painel estiver aberto
+            // Revalida token Google silenciosamente a cada 10 minutos sem re-renderizar o painel
             setInterval(async () => {
                 if (firebaseAuthReady && firebase.auth().currentUser) {
-                    await verifyActiveFirebaseUser(firebase.auth().currentUser, false);
+                    await verifyActiveFirebaseUser(firebase.auth().currentUser, false, true);
                 }
             }, 600000);
             return;
@@ -11576,9 +11757,8 @@
         let savedEmail = '';
         try { savedEmail = localStorage.getItem('evo_authorized_email') || ''; } catch (ex) {}
         if (isValidCorporateEmail(savedEmail) && !isEmailBlocked(savedEmail)) {
-            // Libera a interface e carrega dados
-            grantDomainUI(savedEmail, false);
             try { await bootDashboard(); } catch(e) { console.error('Erro no bootDashboard inicial:', e); }
+            grantDomainUI(savedEmail, false);
         } else {
             lockScreenToAuthGate(isEmailBlocked(savedEmail) ? 'Acesso revogado para este e-mail.' : '');
             if (inp) setTimeout(() => inp.focus(), 50);
