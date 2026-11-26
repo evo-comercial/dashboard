@@ -2641,6 +2641,7 @@
             }
             firebaseDbRefPath = dbPath;
             firebaseDbListenerAttached = true;
+            if (firebase.database().goOnline) firebase.database().goOnline();
             firebase.database().ref(dbPath).on('value', (snapshot) => {
                 const remote = snapshot && snapshot.val ? snapshot.val() : null;
                 if (!remote || !remote.config) return;
@@ -2648,7 +2649,11 @@
                     pendingRemoteSnapshot = remote;
                     return;
                 }
-                applyRemoteState(remote, true);
+                const applied = applyRemoteState(remote, true);
+                if (!applied && dashboardBooted) {
+                    saveLocalStateCache();
+                    renderAll();
+                }
             }, (err) => {
                 console.warn('Firebase RTDB live listener fallback to polling:', err && err.message);
                 firebaseDbListenerAttached = false;
@@ -4194,7 +4199,7 @@
                     },
                     {
                         type: 'line',
-                        label: (opts && extraCtx.metaLegend) ? extraCtx.metaLegend : (isPerDu ? 'Meta / FC por DU (Traço)' : 'Meta / Forecast (Traço)'),
+                        label: extraCtx.metaLegend ? extraCtx.metaLegend : (isPerDu ? 'Meta / FC por DU (Traço)' : 'Meta / Forecast (Traço)'),
                         data: metasHist,
                         isMetaTick: true,
                         showLine: false,
@@ -4234,7 +4239,7 @@
                             padding: { top: 1, bottom: 1, left: 2.5, right: 2.5 },
                             font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", size: fcFontSize, weight: '700' },
                             formatter: (v, ctx) => {
-                                if (ctx.dataIndex === labelsHist.length - 1) return ((opts && extraCtx.metaPrefix) || 'FC: ') + fmtMetricVal(v, isPerDu);
+                                if (ctx.dataIndex === labelsHist.length - 1) return (extraCtx.metaPrefix || 'FC: ') + fmtMetricVal(v, isPerDu);
                                 return (v > outlierCeiling ? '▲ ' : '') + fmtMetricVal(v, isPerDu);
                             }
                         }
@@ -10675,16 +10680,19 @@
         try {
             if (st) { st.style.color = 'var(--evo-blue)'; st.textContent = 'Sincronizando...'; }
 
-            // Prioridade 1: WebSocket nativo do Firebase Realtime Database (propagação imediata <1s para todas as telas abertas)
-            if (firebaseAuthReady && firebase.auth().currentUser && typeof firebase.database === 'function' && window.location.protocol !== 'file:') {
+            // Prioridade 1: WebSocket nativo do Firebase Realtime Database (propagação imediata para todos os devices abertos)
+            const hasDbSdk = (typeof firebase !== 'undefined' && typeof firebase.database === 'function' && window.location.protocol !== 'file:');
+            if (hasDbSdk && ensureFirebaseInit()) {
                 try {
+                    if (firebase.database().goOnline) firebase.database().goOnline();
                     const dbPath = getFirebaseDbPath();
-                    await firebase.database().ref(dbPath).set(JSON.parse(JSON.stringify(STATE)));
+                    const cleanPayload = JSON.parse(JSON.stringify(STATE));
+                    await firebase.database().ref(dbPath).set(cleanPayload);
                     localDirtySinceLastSync = false;
                     attachRealtimeDatabaseListener();
                     if (st) {
                         st.style.color = 'var(--green)';
-                        st.textContent = 'Tempo Real sincronizado (' + (STATE.config.lastUpdate.split(' ')[1] || '') + ')!';
+                        st.textContent = 'Tempo Real sincronizado (' + (String(STATE.config.lastUpdate || '').split(' ')[1] || '') + ')!';
                     }
                     return;
                 } catch (wsErr) {
@@ -10773,7 +10781,9 @@
         // Nunca sobrescrever dados válidos com o template blindado vazio (00/00/0000) ou versão mais antiga
         const remoteStr = remote.config.lastUpdate || '';
         if (!remoteStr || remoteStr === '00/00/0000 00:00:00') return false;
-        if (remoteStr === STATE.config.lastUpdate && Number(remote.config.syncRev || 0) === Number(STATE.config.syncRev || 0)) {
+        const rRev = Number(remote.config.syncRev || 0);
+        const lRev = Number(STATE.config.syncRev || 0);
+        if (remoteStr === STATE.config.lastUpdate && rRev === lRev) {
             return false;
         }
         const remoteTs = parseUpdateTimestamp(remoteStr);
