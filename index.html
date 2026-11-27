@@ -1306,20 +1306,20 @@
         }
 
         .tab-btn.tab-accent-admin {
-            background: linear-gradient(135deg, #475569 0%, #334155 100%);
-            border-color: rgba(203, 213, 225, 0.32);
-            color: #F1F5F9;
-            font-weight: 500;
+            background: linear-gradient(135deg, #748294 0%, #5F6D7E 100%);
+            border-color: rgba(226, 232, 240, 0.45);
+            color: #FFFFFF;
+            font-weight: 600;
         }
         .tab-btn.tab-accent-admin:hover {
-            background: linear-gradient(135deg, #526277 0%, #3E4C5E 100%);
+            background: linear-gradient(135deg, #8291A4 0%, #6B7A8C 100%);
             color: #FFFFFF;
         }
         .tab-btn.tab-accent-admin.active {
-            background: linear-gradient(135deg, #334155 0%, #1E293B 100%);
+            background: linear-gradient(135deg, #64748B 0%, #526071 100%);
             color: #FFFFFF;
-            border-color: #94A3B8;
-            box-shadow: 0 0 0 2px #94A3B8, 0 2px 8px rgba(15, 23, 42, 0.35);
+            border-color: #E2E8F0;
+            box-shadow: 0 0 0 2px #E2E8F0, 0 3px 9px rgba(15, 23, 42, 0.24);
             font-weight: 700;
         }
 
@@ -1650,8 +1650,9 @@
             color: #FFFFFF;
         }
         #p12-group-bar .pill-btn[data-pgrp="Streaming"] {
-            background: #E2265F;
-            color: #FFFFFF;
+            background: linear-gradient(135deg, #B4CBE3 0%, #93B1CE 100%);
+            color: #011A46;
+            border-color: rgba(1, 26, 70, 0.16);
         }
         #p12-group-bar .pill-btn[data-pgrp="Câmeras"] {
             background: #F1B20B;
@@ -1750,6 +1751,151 @@
             font-weight: 800;
             color: #011A46;
             margin-top: 2px;
+        }
+
+
+        /* PÓDIO CLEAN & CLARO EXCLUSIVO DA ABA PRODUTOS (#p12-top-Showcase) */
+        .prod-podium-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.65rem;
+        }
+        @media (max-width: 960px) { .prod-podium-grid { grid-template-columns: 1fr; } }
+        .prod-podium-card {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F5F9FF 100%);
+            border: 1px solid #D8E2EE;
+            border-left: 4px solid #6DBEFA;
+            border-radius: 8px;
+            padding: 0.56rem 0.82rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            box-shadow: 0 2px 6px rgba(1, 26, 70, 0.05);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .prod-podium-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(1, 26, 70, 0.09);
+        }
+        .prod-podium-card.gold {
+            background: linear-gradient(135deg, #FFFFFF 0%, #FEFDF8 100%);
+            border-color: #F3D078;
+            border-left: 4px solid #F1B20B;
+            box-shadow: 0 2px 9px rgba(241, 178, 11, 0.12);
+        }
+        .prod-podium-card.silver {
+            border-color: #C7D5E5;
+            border-left: 4px solid #8196BA;
+        }
+        .prod-podium-card.bronze {
+            border-color: #EBC7AA;
+            border-left: 4px solid #D97706;
+        }
+        .prod-rank-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-family: var(--font-hdr);
+            font-weight: 800;
+            font-size: 0.84rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: #E2E8F0;
+            color: #0F172A;
+        }
+        .prod-podium-card.gold .prod-rank-badge {
+            background: linear-gradient(135deg, #FDE68A 0%, #F1B20B 100%);
+            color: #011A46;
+            box-shadow: 0 1px 4px rgba(241, 178, 11, 0.32);
+        }
+        .prod-podium-card.silver .prod-rank-badge {
+            background: linear-gradient(135deg, #F1F5F9 0%, #CBD5E1 100%);
+            color: #011A46;
+        }
+        .prod-podium-card.bronze .prod-rank-badge {
+            background: linear-gradient(135deg, #FFEDD5 0%, #FDBA74 100%);
+            color: #7C2D12;
+        }
+        .prod-podium-main {
+            min-width: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .prod-podium-title-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .prod-podium-name {
+            font-family: var(--font-hdr);
+            font-weight: 700;
+            font-size: 0.90rem;
+            color: #011A46;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .prod-podium-cat {
+            font-size: 0.62rem;
+            font-weight: 700;
+            color: #002A72;
+            background: #E6F2FE;
+            border: 1px solid #BAE0FD;
+            padding: 1px 6px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .prod-podium-sub {
+            font-size: 0.72rem;
+            color: #475569;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .prod-podium-sub b {
+            color: #002A72;
+            font-weight: 700;
+        }
+        .prod-podium-sub b.proj-v {
+            color: #0284C7;
+            font-weight: 700;
+        }
+        .prod-share-box {
+            flex-shrink: 0;
+            text-align: right;
+            background: #F1F5FA;
+            border: 1px solid #D8E2EE;
+            padding: 4px 9px;
+            border-radius: 6px;
+            line-height: 1.18;
+        }
+        .prod-podium-card.gold .prod-share-box {
+            background: #FEF9E7;
+            border-color: #FDE68A;
+        }
+        .prod-share-lbl {
+            font-size: 0.54rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #64748B;
+            display: block;
+        }
+        .prod-share-val {
+            font-family: var(--font-hdr);
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: #011A46;
+            font-variant-numeric: tabular-nums;
+            display: block;
         }
 
     </style>
@@ -2982,12 +3128,12 @@
         if (btn) {
             btn.title = (verifiedByServer ? 'Google Workspace verificado: ' : 'E-mail corporativo: ') + email + ' (clique para sair/trocar)';
         }
-        if (verifiedByServer) {
+        if (email && isValidCorporateEmail(email)) {
             logCorporateAccess(email).catch(() => {});
         }
     }
 
-    // --- DIAGNÓSTICO DE ACESSOS DIÁRIOS (NÓ ISOLADO /access_logs) ---
+    // --- DIAGNÓSTICO DE ACESSOS DIÁRIOS (NÓ ISOLADO /access_logs + ESPELHO SEGURO EM /evo/config/accessLogsMirror) ---
     let currentAccessLogsRows = [];
     let currentAccessLogsDateStr = '';
 
@@ -3002,6 +3148,41 @@
         const raw = normalizeCloudUrl((STATE.config && STATE.config.cloudSyncUrl) || '');
         if (!raw) return '';
         return raw.replace(/\/evo\.json(\?.*)?$/i, '/access_logs').replace(/\.json(\?.*)?$/i, '_access_logs');
+    }
+
+    function getMirrorLogsBaseUrl() {
+        const raw = normalizeCloudUrl((STATE.config && STATE.config.cloudSyncUrl) || '');
+        if (!raw) return '';
+        return raw.replace(/\.json(\?.*)?$/i, '/config/accessLogsMirror');
+    }
+
+    function waitForFirebaseAuthUser(timeoutMs = 2200) {
+        if (!firebaseAuthReady || typeof firebase === 'undefined' || !firebase.auth) return Promise.resolve(null);
+        if (firebase.auth().currentUser) return Promise.resolve(firebase.auth().currentUser);
+        return new Promise((resolve) => {
+            let done = false;
+            let unsub = null;
+            const timer = setTimeout(() => {
+                if (done) return;
+                done = true;
+                if (typeof unsub === 'function') { try { unsub(); } catch (e) {} }
+                resolve(firebase.auth().currentUser || null);
+            }, timeoutMs);
+            try {
+                unsub = firebase.auth().onAuthStateChanged((u) => {
+                    if (done) return;
+                    if (u) {
+                        done = true;
+                        clearTimeout(timer);
+                        if (typeof unsub === 'function') { try { unsub(); } catch (e) {} }
+                        resolve(u);
+                    }
+                });
+            } catch (e) {
+                clearTimeout(timer);
+                resolve(null);
+            }
+        });
     }
 
     function encodeEmailFirebaseKey(email) {
@@ -3023,55 +3204,183 @@
             .join(' ') || email;
     }
 
+    function parseTimeSecOfDay(tStr) {
+        const m = String(tStr || '').trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+        if (!m) return 999999;
+        return (parseInt(m[1], 10) * 3600) + (parseInt(m[2], 10) * 60) + parseInt(m[3] || '0', 10);
+    }
+
+    function pickEarliestTimeStr(t1, t2) {
+        const s1 = parseTimeSecOfDay(t1);
+        const s2 = parseTimeSecOfDay(t2);
+        if (s1 === 999999 && s2 === 999999) return t1 || t2 || '-';
+        return s1 <= s2 ? t1 : t2;
+    }
+
+    function mergeAccessLogsMaps(targetMap, sourceObj) {
+        if (!sourceObj || typeof sourceObj !== 'object') return;
+        Object.values(sourceObj).forEach(rec => {
+            if (!rec || typeof rec !== 'object') return;
+            const em = String(rec.email || '').trim().toLowerCase();
+            if (!em) return;
+            const candidateFirst = rec.firstAt || rec.accessTime || rec.lastAt || '-';
+            const candidateLast  = rec.lastAt || rec.firstAt || '-';
+            if (!targetMap.has(em)) {
+                targetMap.set(em, {
+                    email: em,
+                    name: rec.name || formatDisplayNameFromEmail(em),
+                    firstAt: candidateFirst,
+                    lastAt: candidateLast,
+                    count: Number(rec.count) || 1,
+                    device: rec.device || 'Desktop'
+                });
+            } else {
+                const cur = targetMap.get(em);
+                cur.firstAt = pickEarliestTimeStr(cur.firstAt, candidateFirst);
+                if (parseTimeSecOfDay(candidateLast) !== 999999 && (parseTimeSecOfDay(cur.lastAt) === 999999 || candidateLast > cur.lastAt)) {
+                    cur.lastAt = candidateLast;
+                }
+                cur.count = Math.max(Number(cur.count) || 1, Number(rec.count) || 1);
+                if (!cur.name && rec.name) cur.name = rec.name;
+            }
+        });
+    }
+
+    function pruneMirrorDatesInMemory() {
+        if (!STATE.config || !STATE.config.accessLogsMirror || typeof STATE.config.accessLogsMirror !== 'object') return;
+        const cutoff = getTodayIsoLocal(-14);
+        Object.keys(STATE.config.accessLogsMirror).forEach(dk => {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dk) && dk < cutoff) {
+                delete STATE.config.accessLogsMirror[dk];
+            }
+        });
+    }
+
+    async function fetchFirebaseJsonWithRetry(baseJsonUrl) {
+        let authParam = await getFirebaseAuthQueryParam(baseJsonUrl.includes('?'), false);
+        let res = await fetch(baseJsonUrl + authParam, { cache: 'no-store' });
+        if ((res.status === 401 || res.status === 403) && firebaseAuthReady) {
+            await waitForFirebaseAuthUser(1800);
+            if (firebase.auth && firebase.auth().currentUser) {
+                authParam = await getFirebaseAuthQueryParam(baseJsonUrl.includes('?'), true);
+                res = await fetch(baseJsonUrl + authParam, { cache: 'no-store' });
+            }
+        }
+        return res;
+    }
+
     async function logCorporateAccess(email) {
-        if (!email || window.location.protocol === 'file:') return;
-        const baseUrl = getAccessLogsBaseUrl();
-        if (!baseUrl) return;
+        const cleanEmail = (email || '').trim().toLowerCase();
+        if (!cleanEmail) return;
 
         const todayIso = getTodayIsoLocal(0);
-        const sessKey = 'evo_logged_access_' + todayIso + '_' + email;
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        const emailKey = encodeEmailFirebaseKey(cleanEmail);
+        const device = detectDeviceLabel();
+        const dispName = formatDisplayNameFromEmail(cleanEmail);
+
+        // Atualiza espelho local em memória imediatamente (preservando sempre o 1º horário do dia)
+        if (!STATE.config.accessLogsMirror || typeof STATE.config.accessLogsMirror !== 'object') {
+            STATE.config.accessLogsMirror = {};
+        }
+        if (!STATE.config.accessLogsMirror[todayIso]) STATE.config.accessLogsMirror[todayIso] = {};
+        const prevLocal = STATE.config.accessLogsMirror[todayIso][emailKey];
+        const mergedLocal = {
+            email: cleanEmail,
+            name: (prevLocal && prevLocal.name) || dispName,
+            firstAt: (prevLocal && prevLocal.firstAt) ? pickEarliestTimeStr(prevLocal.firstAt, timeStr) : timeStr,
+            lastAt: timeStr,
+            count: prevLocal ? ((Number(prevLocal.count) || 1) + 1) : 1,
+            device: (prevLocal && prevLocal.device) || device
+        };
+        STATE.config.accessLogsMirror[todayIso][emailKey] = mergedLocal;
+        pruneMirrorDatesInMemory();
+        saveLocalStateCache();
+
+        if (window.location.protocol === 'file:') return;
+        const sessKey = 'evo_logged_access_' + todayIso + '_' + cleanEmail;
         try {
             if (sessionStorage.getItem(sessKey)) return;
             sessionStorage.setItem(sessKey, '1');
         } catch (e) {}
 
-        const now = new Date();
-        const pad = n => String(n).padStart(2, '0');
-        const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-        const emailKey = encodeEmailFirebaseKey(email);
-        const device = detectDeviceLabel();
-        const authParam = await getFirebaseAuthQueryParam(false);
-        const recordUrl = `${baseUrl}/${todayIso}/${emailKey}.json${authParam}`;
+        await waitForFirebaseAuthUser(2000);
+        let wroteCloud = false;
 
-        try {
-            const getRes = await fetch(recordUrl, { cache: 'no-store' });
-            const existing = getRes.ok ? await getRes.json() : null;
-            if (existing && typeof existing === 'object') {
-                await fetch(recordUrl, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        lastAt: timeStr,
-                        count: (Number(existing.count) || 1) + 1,
-                        device: device
-                    })
-                });
-            } else {
-                await fetch(recordUrl, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: email,
-                        name: formatDisplayNameFromEmail(email),
-                        firstAt: timeStr,
-                        lastAt: timeStr,
-                        count: 1,
-                        device: device
-                    })
-                });
+        // 1. Tenta gravar via SDK WebSocket nativo do Firebase (sem problemas de expiração REST 401)
+        const hasDbSdk = (typeof firebase !== 'undefined' && typeof firebase.database === 'function' && ensureFirebaseInit());
+        if (hasDbSdk) {
+            const dbPathMirror = `${getFirebaseDbPath()}/config/accessLogsMirror/${todayIso}/${emailKey}`;
+            const pathsToTry = [`/access_logs/${todayIso}/${emailKey}`, dbPathMirror];
+            for (const p of pathsToTry) {
+                try {
+                    const ref = firebase.database().ref(p);
+                    const snap = await ref.once('value');
+                    const ex = snap && snap.val ? snap.val() : null;
+                    if (ex && typeof ex === 'object' && ex.firstAt) {
+                        const earliest = pickEarliestTimeStr(ex.firstAt, mergedLocal.firstAt);
+                        mergedLocal.firstAt = earliest;
+                        await ref.update({ firstAt: earliest, lastAt: timeStr, count: (Number(ex.count) || 1) + 1, device: ex.device || device });
+                    } else {
+                        await ref.set(mergedLocal);
+                    }
+                    wroteCloud = true;
+                } catch (sdkErr) {}
             }
-            cleanupOldAccessLogs(baseUrl, todayIso).catch(() => {});
-        } catch (err) {
+        }
+
+        // 2. Fallback REST com renovação automática de token nos 2 caminhos (/access_logs e /evo/config/accessLogsMirror)
+        if (!wroteCloud) {
+            const urls = [getAccessLogsBaseUrl(), getMirrorLogsBaseUrl()].filter(Boolean);
+            for (const bUrl of urls) {
+                try {
+                    const recBase = `${bUrl}/${todayIso}/${emailKey}.json`;
+                    const getRes = await fetchFirebaseJsonWithRetry(recBase + `?t=${Date.now()}`);
+                    const ex = getRes.ok ? await getRes.json() : null;
+                    let authWrite = await getFirebaseAuthQueryParam(false, false);
+                    if (ex && typeof ex === 'object' && ex.firstAt) {
+                        const earliest = pickEarliestTimeStr(ex.firstAt, mergedLocal.firstAt);
+                        mergedLocal.firstAt = earliest;
+                        let wRes = await fetch(recBase + authWrite, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ firstAt: earliest, lastAt: timeStr, count: (Number(ex.count) || 1) + 1 })
+                        });
+                        if (wRes.status === 401 || wRes.status === 403) {
+                            authWrite = await getFirebaseAuthQueryParam(false, true);
+                            wRes = await fetch(recBase + authWrite, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ firstAt: earliest, lastAt: timeStr, count: (Number(ex.count) || 1) + 1 })
+                            });
+                        }
+                        if (wRes.ok) wroteCloud = true;
+                    } else {
+                        let wRes = await fetch(recBase + authWrite, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(mergedLocal)
+                        });
+                        if (wRes.status === 401 || wRes.status === 403) {
+                            authWrite = await getFirebaseAuthQueryParam(false, true);
+                            wRes = await fetch(recBase + authWrite, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(mergedLocal)
+                            });
+                        }
+                        if (wRes.ok) wroteCloud = true;
+                    }
+                } catch (e) {}
+            }
+        }
+
+        if (wroteCloud) {
+            const baseUrl = getAccessLogsBaseUrl();
+            if (baseUrl) cleanupOldAccessLogs(baseUrl, todayIso).catch(() => {});
+        } else {
             try { sessionStorage.removeItem(sessKey); } catch (e) {}
         }
     }
@@ -3083,22 +3392,16 @@
             localStorage.setItem(cleanFlagKey, '1');
         } catch (e) {}
 
-        const authParam = await getFirebaseAuthQueryParam(true);
-        const shallowUrl = `${baseUrl}.json?shallow=true${authParam}`;
-        const res = await fetch(shallowUrl, { cache: 'no-store' });
+        const res = await fetchFirebaseJsonWithRetry(`${baseUrl}.json?shallow=true`);
         if (!res.ok) return;
         const keysObj = await res.json();
         if (!keysObj || typeof keysObj !== 'object') return;
 
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - 30);
-        const pad = n => String(n).padStart(2, '0');
-        const cutoffIso = `${cutoff.getFullYear()}-${pad(cutoff.getMonth() + 1)}-${pad(cutoff.getDate())}`;
-
-        const delAuth = await getFirebaseAuthQueryParam(false);
+        const cutoffIso = getTodayIsoLocal(-30);
+        const delAuth = await getFirebaseAuthQueryParam(false, false);
         for (const dateKey of Object.keys(keysObj)) {
             if (/^\d{4}-\d{2}-\d{2}$/.test(dateKey) && dateKey < cutoffIso) {
-                await fetch(`${baseUrl}/${dateKey}.json${delAuth}`, { method: 'DELETE' });
+                await fetch(`${baseUrl}/${dateKey}.json${delAuth}`, { method: 'DELETE' }).catch(() => {});
             }
         }
     }
@@ -3116,7 +3419,6 @@
 
     async function loadAccessLogsForDate(dateStr) {
         const tblEl = document.getElementById('p10-access-logs-table');
-        const sumEl = document.getElementById('access-logs-summary');
         const inp = document.getElementById('access-log-date');
         const targetDate = dateStr || (inp && inp.value) || getTodayIsoLocal(0);
         if (inp && inp.value !== targetDate) inp.value = targetDate;
@@ -3128,26 +3430,88 @@
         if (bYest) bYest.classList.toggle('active', targetDate === getTodayIsoLocal(-1));
 
         const baseUrl = getAccessLogsBaseUrl();
-        if (!baseUrl) {
-            if (tblEl) tblEl.innerHTML = '<div style="padding:12px; color:var(--text-muted);">Configure a URL Nuvem acima para visualizar o diagnóstico de acessos.</div>';
+        const mirrorUrl = getMirrorLogsBaseUrl();
+        const mergedByEmail = new Map();
+
+        // Semeia imediatamente com espelho em memória (STATE.config.accessLogsMirror) caso exista
+        if (STATE.config && STATE.config.accessLogsMirror && STATE.config.accessLogsMirror[targetDate]) {
+            mergeAccessLogsMaps(mergedByEmail, STATE.config.accessLogsMirror[targetDate]);
+        }
+
+        if (!baseUrl && !mirrorUrl) {
+            currentAccessLogsRows = Array.from(mergedByEmail.values());
+            renderAccessLogsTable();
             return;
         }
-        if (tblEl) tblEl.innerHTML = '<div style="padding:12px; color:var(--evo-blue); font-weight:600;"><i class="fa-solid fa-circle-notch fa-spin"></i> Carregando acessos de ' + targetDate.split('-').reverse().join('/') + '...</div>';
 
-        try {
-            const authParam = await getFirebaseAuthQueryParam(true);
-            const res = await fetch(`${baseUrl}/${targetDate}.json?t=${Date.now()}${authParam}`, { cache: 'no-store' });
-            if (!res.ok) {
-                if (tblEl) tblEl.innerHTML = '<div style="padding:12px; color:var(--red);">Não foi possível ler os logs (HTTP ' + res.status + '). Verifique o login Google corporativo.</div>';
-                return;
-            }
-            const data = await res.json();
-            currentAccessLogsRows = data && typeof data === 'object' ? Object.values(data) : [];
-            currentAccessLogsRows.sort((a, b) => String(b.lastAt || '').localeCompare(String(a.lastAt || '')));
-            renderAccessLogsTable();
-        } catch (err) {
-            if (tblEl) tblEl.innerHTML = '<div style="padding:12px; color:var(--red);">Falha de rede ao consultar acessos.</div>';
+        if (tblEl && mergedByEmail.size === 0) {
+            tblEl.innerHTML = '<div style="padding:12px; color:var(--evo-blue); font-weight:600;"><i class="fa-solid fa-circle-notch fa-spin"></i> Carregando acessos de ' + targetDate.split('-').reverse().join('/') + '...</div>';
         }
+
+        let cloudReadOk = false;
+
+        if (window.location.protocol !== 'file:') {
+            await waitForFirebaseAuthUser(2200);
+
+            // Camada 1: SDK WebSocket nativo do Firebase Realtime Database (/access_logs e /evo/config/accessLogsMirror)
+            const hasDbSdk = (typeof firebase !== 'undefined' && typeof firebase.database === 'function' && ensureFirebaseInit());
+            if (hasDbSdk) {
+                const sdkPaths = [`/access_logs/${targetDate}`, `${getFirebaseDbPath()}/config/accessLogsMirror/${targetDate}`];
+                for (const sp of sdkPaths) {
+                    try {
+                        const snap = await Promise.race([
+                            firebase.database().ref(sp).once('value'),
+                            new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3500))
+                        ]);
+                        const val = snap && snap.val ? snap.val() : null;
+                        if (val && typeof val === 'object') {
+                            mergeAccessLogsMaps(mergedByEmail, val);
+                        }
+                        cloudReadOk = true;
+                    } catch (sdkErr) {}
+                }
+            }
+
+            // Camada 2: REST com renovação forçada de token (caso SDK WebSocket não tenha lido)
+            if (!cloudReadOk) {
+                const restTargets = [
+                    baseUrl ? `${baseUrl}/${targetDate}.json?t=${Date.now()}` : '',
+                    mirrorUrl ? `${mirrorUrl}/${targetDate}.json?t=${Date.now()}` : ''
+                ].filter(Boolean);
+
+                for (const rUrl of restTargets) {
+                    try {
+                        const res = await fetchFirebaseJsonWithRetry(rUrl);
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data && typeof data === 'object') {
+                                mergeAccessLogsMaps(mergedByEmail, data);
+                            }
+                            cloudReadOk = true;
+                        }
+                    } catch (e) {}
+                }
+            }
+        }
+
+        currentAccessLogsRows = Array.from(mergedByEmail.values());
+        // Ordenação estrita crescente pelo PRIMEIRO horário de login (firstAt)
+        currentAccessLogsRows.sort((a, b) => {
+            const diff = parseTimeSecOfDay(a.firstAt) - parseTimeSecOfDay(b.firstAt);
+            if (diff !== 0) return diff;
+            return String(a.name || '').localeCompare(String(b.name || ''));
+        });
+
+        // Sincroniza espelho em memória com o que veio da nuvem
+        if (currentAccessLogsRows.length > 0) {
+            if (!STATE.config.accessLogsMirror || typeof STATE.config.accessLogsMirror !== 'object') STATE.config.accessLogsMirror = {};
+            if (!STATE.config.accessLogsMirror[targetDate]) STATE.config.accessLogsMirror[targetDate] = {};
+            currentAccessLogsRows.forEach(r => {
+                STATE.config.accessLogsMirror[targetDate][encodeEmailFirebaseKey(r.email)] = r;
+            });
+        }
+
+        renderAccessLogsTable(cloudReadOk || mergedByEmail.size > 0 || window.location.protocol === 'file:');
     }
 
     function getDistinctDailyAccessRows(rowsList) {
@@ -3155,19 +3519,30 @@
         (rowsList || []).forEach(r => {
             const em = String(r.email || '').toLowerCase().trim();
             if (!em) return;
+            const candidateTime = r.firstAt || r.accessTime || r.lastAt || '-';
             if (!map.has(em)) {
                 map.set(em, {
                     email: em,
                     name: r.name || formatDisplayNameFromEmail(em),
-                    accessTime: r.firstAt || r.lastAt || '-',
+                    accessTime: candidateTime,
                     device: r.device || 'Desktop'
                 });
+            } else {
+                const existing = map.get(em);
+                existing.accessTime = pickEarliestTimeStr(existing.accessTime, candidateTime);
             }
         });
-        return Array.from(map.values());
+        const arr = Array.from(map.values());
+        // Classificação crescente obrigatória pelo 1º horário de login no dia
+        arr.sort((a, b) => {
+            const diff = parseTimeSecOfDay(a.accessTime) - parseTimeSecOfDay(b.accessTime);
+            if (diff !== 0) return diff;
+            return String(a.name || '').localeCompare(String(b.name || ''));
+        });
+        return arr;
     }
 
-    function renderAccessLogsTable() {
+    function renderAccessLogsTable(readSucceeded = true) {
         const tblEl = document.getElementById('p10-access-logs-table');
         const sumEl = document.getElementById('access-logs-summary');
         if (!tblEl) return;
@@ -3184,12 +3559,16 @@
             sumEl.innerHTML = `
                 <span class="badge badge-cyan"><i class="fa-solid fa-users"></i> Colaboradores que Acessaram: <b>${uniqueUsers}</b></span>
                 <span class="badge" style="background:#E2E8F0; color:#1E293B;"><i class="fa-solid fa-desktop"></i> Desktop: <b>${desktopUsers}</b> &bull; <i class="fa-solid fa-mobile-screen"></i> Mobile: <b>${mobileUsers}</b></span>
-                <span style="color:var(--text-muted); margin-left:auto;">1 registro único por colaborador no dia (retenção de 30 dias)</span>
+                <span style="color:var(--text-muted); margin-left:auto;"><i class="fa-solid fa-arrow-down-1-9"></i> Classificado pelo 1º horário de login (retenção 30 dias)</span>
             `;
         }
 
         if (rows.length === 0) {
-            tblEl.innerHTML = `<div style="padding:14px; color:var(--text-muted); font-style:italic;">Nenhum acesso registrado para ${currentAccessLogsDateStr.split('-').reverse().join('/')}.</div>`;
+            if (!readSucceeded && window.location.protocol !== 'file:' && firebaseAuthReady && !(firebase.auth && firebase.auth().currentUser)) {
+                tblEl.innerHTML = `<div style="padding:14px; color:#475569; background:#F8FAFC; border-radius:6px;">Para consultar os logs em tempo real da nuvem, autentique-se com <b>Entrar com o Google</b> no link oficial hospedado.</div>`;
+            } else {
+                tblEl.innerHTML = `<div style="padding:14px; color:var(--text-muted); font-style:italic;">Nenhum acesso registrado para ${currentAccessLogsDateStr.split('-').reverse().join('/')}.</div>`;
+            }
             return;
         }
 
@@ -3198,7 +3577,7 @@
             <th class="left">Colaborador</th>
             <th class="left">E-mail Corporativo</th>
             <th>Domínio</th>
-            <th>Horário Acesso</th>
+            <th>1º Login</th>
             <th>Dispositivo</th>
             <th>Status</th>
         </tr></thead><tbody>`;
@@ -3208,7 +3587,7 @@
             const domain = em.includes('@') ? '@' + em.split('@')[1] : '-';
             const devIcon = r.device === 'Mobile' ? '<i class="fa-solid fa-mobile-screen"></i> Mobile' : '<i class="fa-solid fa-desktop"></i> Desktop';
             h += `<tr>
-                <td><b>${idx + 1}</b></td>
+                <td><b>${idx + 1}º</b></td>
                 <td class="left"><b>${r.name}</b></td>
                 <td class="left">${em}</td>
                 <td><span class="badge ${domain === '@evo.digital' ? 'badge-cyan' : (domain === '@sejaamigo.com.br' ? 'badge-gold' : (domain === '@avato.com.br' ? '' : 'badge-good'))}" ${domain === '@avato.com.br' ? 'style="background:#EDE9FE; color:#5B21B6; border:1px solid #DDD6FE;"' : ''}>${domain}</span></td>
@@ -3227,11 +3606,12 @@
             alert('Não há registros de acesso na data selecionada para exportar.');
             return;
         }
-        const lines = ['Data;Colaborador;Email;Dominio;Horario_Acesso;Dispositivo;Status'];
-        distinctRows.forEach(r => {
+        const lines = ['Ordem;Data;Colaborador;Email;Dominio;Primeiro_Login;Dispositivo;Status'];
+        distinctRows.forEach((r, idx) => {
             const em = r.email;
             const dom = em.includes('@') ? '@' + em.split('@')[1] : '';
             lines.push([
+                idx + 1,
                 currentAccessLogsDateStr,
                 `"${r.name.replace(/"/g, '""')}"`,
                 em,
@@ -8969,12 +9349,12 @@
             const top3 = nonInetProds.slice(0, 3);
             const podiumClasses = ['gold', 'silver', 'bronze'];
             const medalLabels   = ['1º', '2º', '3º'];
-            let podHtml = `<div class="podium-grid">`;
+            let podHtml = `<div class="prod-podium-grid">`;
             for (let i = 0; i < 3; i++) {
                 const it = top3[i];
                 const cls = podiumClasses[i];
                 if (!it) {
-                    podHtml += `<div class="podium-card ${cls}"><div class="podium-left"><div class="rank-medal ${cls === 'gold' ? '' : cls}">${medalLabels[i]}</div><div class="podium-info"><div class="podium-name">Sem registros no filtro</div></div></div></div>`;
+                    podHtml += `<div class="prod-podium-card ${cls}"><div style="display:flex; align-items:center; gap:9px;"><div class="prod-rank-badge">${medalLabels[i]}</div><div class="prod-podium-main"><div class="prod-podium-name" style="color:#64748B;">Sem registros no filtro</div></div></div></div>`;
                     continue;
                 }
                 const pa = it.a * du.fator;
@@ -8982,25 +9362,24 @@
                 const m1Val = it.aHist[m1Idx] || 0;
                 const m1Pct = m1Val > 0 ? ((pa / m1Val) - 1) * 100 : 0;
                 const tx = it.v > 0 ? (it.a / it.v) * 100 : 0;
+                const hoverDetails = `${it.key} (${it.macroBtn}) | Vendas: ${fmtMetricVal(isPerDu ? it.v / curDivisor : it.v, isPerDu)} | Conversão: ${fmtPct(tx)} | M-1: ${m1Val > 0 ? ((m1Pct >= 0 ? '+' : '') + fmtPct(m1Pct)) : '-'}`;
                 podHtml += `
-                    <div class="podium-card ${cls}">
-                        <i class="fa-solid fa-award podium-watermark"></i>
-                        <div class="podium-left">
-                            <div class="rank-medal ${cls === 'gold' ? '' : cls}">${medalLabels[i]}</div>
-                            <div class="podium-info">
-                                <div class="podium-name-row">
-                                    <span class="podium-name" title="${it.key}">${it.key}</span>
-                                    <span class="podium-area">${it.macroBtn}</span>
+                    <div class="prod-podium-card ${cls}" title="${hoverDetails}">
+                        <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+                            <div class="prod-rank-badge">${medalLabels[i]}</div>
+                            <div class="prod-podium-main">
+                                <div class="prod-podium-title-row">
+                                    <span class="prod-podium-name">${it.key}</span>
+                                    <span class="prod-podium-cat">${it.macroBtn}</span>
                                 </div>
-                                <div class="podium-stats">
-                                    Ativ${duTag}: <b>${fmtMetricVal(isPerDu ? it.a / curDivisor : it.a, isPerDu)}</b> (Proj <b class="alt-val">${fmtMetricVal(isPerDu ? pa / curDivisor : pa, isPerDu)}</b>) • Vnd: ${fmtMetricVal(isPerDu ? it.v / curDivisor : it.v, isPerDu)} • Conv: ${fmtPct(tx)}
+                                <div class="prod-podium-sub">
+                                    Ativ${duTag}: <b>${fmtMetricVal(isPerDu ? it.a / curDivisor : it.a, isPerDu)}</b> &bull; Proj: <b class="proj-v">${fmtMetricVal(isPerDu ? pa / curDivisor : pa, isPerDu)}</b>
                                 </div>
                             </div>
                         </div>
-                        <div class="prize-box">
-                            <span class="prize-lbl">Share Ex-Int.</span>
-                            <span class="prize-val">${fmtPct(sh)}</span>
-                            <span style="font-size:0.56rem; font-weight:700; opacity:0.9;">M-1: ${m1Val > 0 ? ((m1Pct >= 0 ? '+' : '') + fmtPct(m1Pct)) : '-'}</span>
+                        <div class="prod-share-box">
+                            <span class="prod-share-lbl">Share</span>
+                            <span class="prod-share-val">${fmtPct(sh)}</span>
                         </div>
                     </div>`;
             }
@@ -9149,10 +9528,13 @@
         const cLeftEl = document.getElementById('chartProdLeft');
         if (cLeftEl) {
             if (chartProdLeftObj) chartProdLeftObj.destroy();
-            const lbls = rkItems.map(x => x.key.length > 28 ? x.key.slice(0, 26) + '…' : x.key);
+            const lbls = rkItems.map((x, idx) => {
+                const nm = x.key.length > 32 ? x.key.slice(0, 30) + '…' : x.key;
+                return `${idx + 1}º  ${nm}`;
+            });
             const valsA = rkItems.map(x => isPerDu ? +(x.a / curDivisor).toFixed(1) : x.a);
-            const valsV = rkItems.map(x => isPerDu ? +(x.v / curDivisor).toFixed(1) : x.v);
-            const maxH = Math.max(1, ...valsA, ...valsV);
+            const barColors = rkItems.map((_, idx) => idx === 0 ? '#4285F4' : (idx < 3 ? '#5E9CFA' : '#82BEFA'));
+            const maxH = Math.max(1, ...valsA);
 
             chartProdLeftObj = new Chart(cLeftEl.getContext('2d'), {
                 type: 'bar',
@@ -9162,22 +9544,18 @@
                         {
                             label: isPerDu ? 'Ativações / DU' : 'Ativações Mês',
                             data: valsA,
-                            backgroundColor: '#0038A8',
-                            borderRadius: 4,
-                            barPercentage: 0.78,
-                            categoryPercentage: 0.84,
+                            backgroundColor: barColors,
+                            borderRadius: 5,
+                            barPercentage: 0.62,
+                            categoryPercentage: 0.80,
                             datalabels: {
                                 display: true,
                                 anchor: 'end',
                                 align: 'right',
-                                offset: 3,
-                                color: '#001B5E',
-                                font: { family: "'Plus Jakarta Sans', sans-serif", size: 8.6, weight: '800' },
-                                formatter: (v, ctx) => {
-                                    const it = rkItems[ctx.dataIndex];
-                                    const vv = it ? (isPerDu ? +(it.v / curDivisor).toFixed(1) : it.v) : 0;
-                                    return `${fmtMetricVal(v, isPerDu)} ativ. (${fmtMetricVal(vv, isPerDu)} vnd)`;
-                                }
+                                offset: 5,
+                                color: '#011A46',
+                                font: { family: "'Plus Jakarta Sans', sans-serif", size: 9.0, weight: '700' },
+                                formatter: (v) => fmtMetricVal(v, isPerDu)
                             }
                         }
                     ]
@@ -9187,11 +9565,25 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     devicePixelRatio: Math.max(window.devicePixelRatio || 1, 2),
-                    layout: { padding: { top: 4, bottom: 4, left: 4, right: 98 } },
-                    plugins: { legend: { display: false } },
+                    layout: { padding: { top: 4, bottom: 4, left: 4, right: 48 } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const it = rkItems[ctx.dataIndex];
+                                    if (!it) return '';
+                                    const va = isPerDu ? +(it.a / curDivisor).toFixed(1) : it.a;
+                                    const vv = isPerDu ? +(it.v / curDivisor).toFixed(1) : it.v;
+                                    const cv = it.v > 0 ? ((it.a / it.v) * 100).toFixed(1).replace('.', ',') + '%' : '-';
+                                    return `Ativações: ${fmtMetricVal(va, isPerDu)} | Vendas: ${fmtMetricVal(vv, isPerDu)} | Conv.: ${cv}`;
+                                }
+                            }
+                        }
+                    },
                     scales: {
-                        x: { display: false, min: 0, max: +(maxH * 1.34).toFixed(2) },
-                        y: { grid: { display: false }, ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", size: 9.0, weight: '700' }, color: '#0F172A' } }
+                        x: { display: false, min: 0, max: +(maxH * 1.18).toFixed(2) },
+                        y: { grid: { display: false }, border: { display: false }, ticks: { font: { family: "'Inter', sans-serif", size: 9.2, weight: '600' }, color: '#1E293B' } }
                     }
                 }
             });
@@ -11756,6 +12148,7 @@
             if (exportState.movelDet) exportState.movelDet.rows = [];
             if (exportState.movelPort) { exportState.movelPort.rows = []; exportState.movelPort.bySeller = { CO: {}, RJ: {}, RS: {}, SP: {} }; }
             exportState.config.lastUpdate = '00/00/0000 00:00:00';
+            delete exportState.config.accessLogsMirror;
         }
         cloneDoc.querySelector('#embedded-state').textContent = JSON.stringify(exportState);
 
@@ -12019,7 +12412,28 @@
 
         let needsCloudMigrationPush = false;
         const preservedProdRules = STATE.config.prodRules;
+        const localMirrorPrev = (STATE.config && STATE.config.accessLogsMirror && typeof STATE.config.accessLogsMirror === 'object')
+            ? JSON.parse(JSON.stringify(STATE.config.accessLogsMirror))
+            : {};
         Object.assign(STATE.config, remote.config);
+        if (Object.keys(localMirrorPrev).length > 0 || (remote.config && remote.config.accessLogsMirror)) {
+            const mergedMir = (remote.config && remote.config.accessLogsMirror && typeof remote.config.accessLogsMirror === 'object')
+                ? JSON.parse(JSON.stringify(remote.config.accessLogsMirror))
+                : {};
+            Object.keys(localMirrorPrev).forEach(dk => {
+                if (!mergedMir[dk]) mergedMir[dk] = localMirrorPrev[dk];
+                else {
+                    Object.keys(localMirrorPrev[dk] || {}).forEach(ek => {
+                        const lRec = localMirrorPrev[dk][ek];
+                        const rRec = mergedMir[dk][ek];
+                        if (!rRec) mergedMir[dk][ek] = lRec;
+                        else if (lRec && lRec.firstAt) rRec.firstAt = pickEarliestTimeStr(rRec.firstAt, lRec.firstAt);
+                    });
+                }
+            });
+            STATE.config.accessLogsMirror = mergedMir;
+            pruneMirrorDatesInMemory();
+        }
         if (Number(STATE.config.sessionMaxDays) !== 1) { STATE.config.sessionMaxDays = 1; needsCloudMigrationPush = true; }
         if (!STATE.config.prodRules && preservedProdRules) {
             STATE.config.prodRules = preservedProdRules;
@@ -12703,6 +13117,7 @@
                     if (ok) {
                         attachRealtimeDatabaseListener();
                         if (!firebaseDbListenerAttached) checkLiveUpdates(false).catch(() => {});
+                        if (adminUnlocked) loadAccessLogsForDate().catch(() => {});
                     }
                 } else if (!pendingEmailLinkCompletion) {
                     optimisticAllowed = false;
