@@ -2089,15 +2089,20 @@
                     <div id="blocked-emails-list" style="display:flex; flex-wrap:wrap; gap:4px; align-items:center; font-size:0.65rem;"></div>
                 </div>
 
+                <div id="p10-homolog-banner" style="display:none; background:#FEF3C7; border:1.5px solid #F59E0B; border-radius:5px; padding:6px 10px; font-size:0.68rem; color:#78350F; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                    <span><b><i class="fa-solid fa-flask"></i> MODO HOMOLOGAÇÃO ATIVO:</b> Você está testando neste arquivo/URL isolada (<code>/evo_homolog.json</code>). Os dados ao vivo da operação em <code>/evo.json</code> não são alterados até você publicar no arquivo oficial.</span>
+                    <button type="button" class="btn secondary" style="padding:3px 9px; font-size:0.66rem; background:#FDE68A; color:#78350F; border:1px solid #F59E0B;" onclick="mirrorProductionToHomolog()"><i class="fa-solid fa-clone"></i> Espelhar Dados da Produção</button>
+                </div>
+
                 <div class="p10-quad-grid">
                     <div class="p10-quad-box">
                         <div class="p10-quad-hdr">
                             <span><i class="fa-solid fa-network-wired" style="color:var(--evo-blue);"></i> BD Geral: BI COM 1001</span>
-                            <span style="font-size:0.59rem; font-weight:600; color:var(--text-muted);">Banda Larga Fixa</span>
+                            <span id="quad-upd-bl" style="font-size:0.59rem; font-weight:700; color:var(--evo-blue);">Últ. Atualização: --</span>
                         </div>
                         <textarea id="bi-paste-area" class="p10-quad-ta" placeholder="Cole aqui os dados da BD Geral: BI COM 1001 (Data, CanalEntrada, Unidade, Região, GR, Fornecedor, Propostas, Altas)..."></textarea>
                         <div class="p10-quad-ftr">
-                            <span>Base fixa diária • Preserva nuvem se vazio</span>
+                            <span>BL Fixa • Atualiza só ao colar e processar</span>
                             <span>BL Fixa</span>
                         </div>
                     </div>
@@ -2105,36 +2110,36 @@
                     <div class="p10-quad-box churn-q">
                         <div class="p10-quad-hdr">
                             <span><i class="fa-solid fa-user-minus" style="color:var(--evo-coral);"></i> Churn: BI OP 1002</span>
-                            <span style="font-size:0.59rem; font-weight:600; color:var(--text-muted);">Opcional</span>
+                            <span id="quad-upd-churn" style="font-size:0.59rem; font-weight:700; color:var(--evo-coral);">Últ. Atualização: --</span>
                         </div>
                         <textarea id="churn-paste-area" class="p10-quad-ta" placeholder="Cole aqui a base de Churn: BI OP 1002 (Histórico Jan-Out ou Projeção/Real por Unidade/Regional)..."></textarea>
                         <div class="p10-quad-ftr">
-                            <span id="churn-last-load-lbl">Churn vigente: 24/11/2026 (Projeção Nov — 78 un.)</span>
-                            <span>Sem projeção DU</span>
+                            <span id="churn-last-load-lbl">Sem projeção DU</span>
+                            <span>Churn</span>
                         </div>
                     </div>
 
                     <div class="p10-quad-box prod-q">
                         <div class="p10-quad-hdr">
                             <span><i class="fa-solid fa-boxes-stacked" style="color:var(--green);"></i> Produtos: BI COM 1007</span>
-                            <span style="font-size:0.59rem; font-weight:600; color:var(--green);">Portfólio + Vnd/Ativ. Móvel</span>
+                            <span id="quad-upd-prod" style="font-size:0.59rem; font-weight:700; color:var(--green);">Últ. Atualização: --</span>
                         </div>
-                        <textarea id="produtos-paste-area" class="p10-quad-ta" placeholder="Cole aqui a planilha Produtos: BI COM 1007 (Data/Mês, CanalEntrada, Unidade, Região, ..., Grupo Produto, Produto, Qtd Vendas Ofertas, Qtd Ativações Ofertas)..."></textarea>
+                        <textarea id="produtos-paste-area" class="p10-quad-ta" placeholder="Cole aqui a planilha Produtos: BI COM 1007 (Data/Mês, CanalEntrada, Unidade, Região, Gerente Relacionamento, Fornecedor Venda, Grupo Produto, Produto, Qtd Vendas Ofertas, Qtd Ativações Ofertas)..."></textarea>
                         <div class="p10-quad-ftr">
-                            <span id="produtos-last-load-lbl">Produtos vigente: 25/11/2026 (Nov/26)</span>
-                            <span>Ignora TV • Alimenta Móvel</span>
+                            <span id="produtos-last-load-lbl">Atualiza Produtos + Vnd/Ativ. Móvel (Reg/Unid/Canais/Agentes/AAs)</span>
+                            <span>Ignora TV</span>
                         </div>
                     </div>
 
                     <div class="p10-quad-box dmv-q">
                         <div class="p10-quad-hdr">
                             <span><i class="fa-solid fa-sim-card" style="color:#EA580C;"></i> DMV Móvel</span>
-                            <span style="font-size:0.59rem; font-weight:600; color:#EA580C;">Pacotes, Chip, Ticket &amp; Portab.</span>
+                            <span id="quad-upd-dmv" style="font-size:0.59rem; font-weight:700; color:#EA580C;">Últ. Atualização: --</span>
                         </div>
                         <textarea id="movel-det-paste-area" class="p10-quad-ta" placeholder="Cole aqui o relatório DMV Móvel (PROPOSTA, DATA_VENDA, CANAL_ENTRADA, TIPO_CHIP, VELOCIDADE, GR, UNIDADE, VALOR_OFERTA, STATUS_REQUISICAO_PORTABILIDADE, DATA_AGENDAMENTO_PORTABILIDADE)..."></textarea>
                         <div class="p10-quad-ftr">
-                            <span id="movel-det-last-load-lbl">DMV Móvel vigente: 25/11/2026 (Nov/26)</span>
-                            <span>4 Regionais • Critério A Portab.</span>
+                            <span id="movel-det-last-load-lbl">Atualiza somente Portabilidades + Mix/Ticket</span>
+                            <span>4 Regionais</span>
                         </div>
                     </div>
                 </div>
@@ -2146,6 +2151,7 @@
                     </div>
                     <div style="display:flex; gap:5px; flex-wrap:wrap; align-items:center;">
                         <button class="btn primary" onclick="processarBDGeral()"><i class="fa-solid fa-cloud-arrow-up"></i> Processar & Publicar na Nuvem</button>
+                        <button class="btn" id="btn-rollback-total" style="background:#EA580C; color:#fff;" onclick="rollbackToLastTotalUpdate()" title="Reverte para o último snapshot completo salvo antes de uma publicação/virada"><i class="fa-solid fa-clock-rotate-left"></i> Voltar Última Atualização Total</button>
                         <button class="btn" style="background:var(--gold); color:#fff;" onclick="virarMesAutomatico()"><i class="fa-solid fa-calendar-check"></i> Fechar Mês (Virada)</button>
                         <button class="btn secondary" onclick="exportUpdatedHTML()" title="Baixa cópia local de backup do index.html"><i class="fa-solid fa-download"></i> Backup HTML</button>
                         <button class="btn secondary" onclick="openPanel(11)" title="Consultar manual completo e regras"><i class="fa-solid fa-book-open"></i> Ver Manual</button>
@@ -2630,11 +2636,34 @@
     let pendingRemoteSnapshot = null;
     let wakeupListenersBound = false;
 
+    const IS_HOMOLOG_MODE = (() => {
+        try {
+            const p = (window.location.pathname || '').toLowerCase();
+            const q = new URLSearchParams(window.location.search || '');
+            return p.includes('homolog') || (q.get('env') || '').toLowerCase() === 'homolog';
+        } catch (e) { return false; }
+    })();
+
     function getFirebaseDbPath() {
         const url = normalizeCloudUrl((STATE.config && STATE.config.cloudSyncUrl) || '');
-        if (!url) return '/evo';
-        const m = url.match(/^https?:\/\/[^\/]+(\/.*?)\.json$/i);
-        return (m && m[1]) ? m[1] : '/evo';
+        let basePath = '/evo';
+        if (url) {
+            const m = url.match(/^https?:\/\/[^\/]+(\/.*?)\.json$/i);
+            if (m && m[1]) basePath = m[1];
+        }
+        return IS_HOMOLOG_MODE ? (basePath + '_homolog') : basePath;
+    }
+
+    function getFirebaseBackupsPath() {
+        return getFirebaseDbPath() + '_backups';
+    }
+
+    function getEffectiveCloudJsonUrl() {
+        const baseUrl = normalizeCloudUrl((STATE.config && STATE.config.cloudSyncUrl) || '');
+        if (!baseUrl) return '';
+        if (!IS_HOMOLOG_MODE) return baseUrl;
+        if (/\.json$/i.test(baseUrl)) return baseUrl.replace(/\.json$/i, '_homolog.json');
+        return baseUrl + '_homolog';
     }
 
     function isUserActivelyEditing() {
@@ -3860,7 +3889,58 @@
         }
 
         duCorridos = Math.min(duTotal, Math.max(1, duCorridos));
-        return { duTotal, duCorridos, fator: duTotal / duCorridos, endMonth, maxDayNum };
+
+        let maxBlDateStr = '';
+        let maxBlDateObj = null;
+        (STATE.bl || []).forEach(r => {
+            if (r && r[0] && String(r[0]).startsWith(dtIniStr.slice(0, 7))) {
+                const ds = String(r[0]).slice(0, 10);
+                if (!maxBlDateStr || ds > maxBlDateStr) maxBlDateStr = ds;
+            }
+        });
+        let bdDuCorridos = duCorridos;
+        if (maxBlDateStr) {
+            const bp = maxBlDateStr.split('-').map(Number);
+            maxBlDateObj = new Date(bp[0], bp[1] - 1, bp[2]);
+            let bDu = 0;
+            let bCur = new Date(start);
+            const bLimit = maxBlDateObj > endMonth ? endMonth : maxBlDateObj;
+            while (bCur <= bLimit) {
+                const dow = bCur.getDay();
+                const iso = bCur.toISOString().slice(0, 10);
+                if (!holidays.has(iso)) {
+                    if (dow !== 0 && dow !== 6) bDu += 1;
+                    else if (dow === 6) bDu += 0.5;
+                }
+                bCur.setDate(bCur.getDate() + 1);
+            }
+            bdDuCorridos = Math.min(duTotal, Math.max(1, bDu));
+        }
+
+        const todayMidnight = new Date();
+        todayMidnight.setHours(0, 0, 0, 0);
+        const curMonthPrefix = `${todayMidnight.getFullYear()}-${String(todayMidnight.getMonth() + 1).padStart(2, '0')}`;
+        let isBdOutdatedForToday = false;
+        if (dtIniStr.slice(0, 7) === curMonthPrefix && todayMidnight >= start && todayMidnight <= endMonth) {
+            const todayIso = `${todayMidnight.getFullYear()}-${String(todayMidnight.getMonth() + 1).padStart(2, '0')}-${String(todayMidnight.getDate()).padStart(2, '0')}`;
+            if (!maxBlDateStr || maxBlDateStr < todayIso) {
+                isBdOutdatedForToday = true;
+            }
+        }
+        const maxBlDateBr = maxBlDateStr ? maxBlDateStr.split('-').reverse().slice(0, 2).join('/') : 'Sem BD';
+        const bdFator = duTotal / bdDuCorridos;
+
+        return {
+            duTotal,
+            duCorridos,
+            fator: duTotal / duCorridos,
+            endMonth,
+            maxDayNum,
+            isBdOutdatedForToday,
+            maxBlDateBr,
+            bdDuCorridos,
+            bdFator
+        };
     }
 
     function fmtInt(n) { return Math.round(n || 0).toLocaleString('pt-BR'); }
@@ -4033,9 +4113,30 @@
         try {
             const { du } = getRegionMetrics();
             const duEl = document.getElementById('du-indicator');
-            if (duEl && du) duEl.textContent = `DU: ${du.duCorridos} / ${du.duTotal} (Fator ${du.fator.toFixed(2).replace('.', ',')}x)`;
+            if (duEl && du) {
+                if (du.isBdOutdatedForToday) {
+                    const bdDuTxt = String(du.bdDuCorridos).replace('.', ',');
+                    const bdFatTxt = du.bdFator.toFixed(2).replace('.', ',');
+                    duEl.textContent = `BD até ${du.maxBlDateBr} • DU: ${bdDuTxt} / ${du.duTotal} (${bdFatTxt}x)`;
+                    duEl.style.background = '#DC2626';
+                    duEl.style.borderColor = '#FCA5A5';
+                    duEl.style.color = '#FFFFFF';
+                    duEl.style.fontWeight = '700';
+                    duEl.title = 'Dia virou e a BD Geral ainda não foi atualizada hoje. Exibindo último dia da BD Geral e seus DU.';
+                } else {
+                    duEl.textContent = `DU: ${du.duCorridos} / ${du.duTotal} (Fator ${du.fator.toFixed(2).replace('.', ',')}x)`;
+                    duEl.style.background = '';
+                    duEl.style.borderColor = '';
+                    duEl.style.color = '';
+                    duEl.style.fontWeight = '';
+                    duEl.title = '';
+                }
+            }
             const updEl = document.getElementById('last-update-badge');
-            if (updEl) updEl.innerHTML = `<i class="fa-solid fa-square-check"></i> <span><span class="live-dot" title="Sincronização em tempo real ativa"></span>Última Atualização<br>${STATE.config.lastUpdate || 'N/A'}</span>`;
+            if (updEl) {
+                const hTag = IS_HOMOLOG_MODE ? ' <span style="background:#F59E0B;color:#0F172A;font-weight:800;padding:1px 4px;border-radius:3px;font-size:0.58rem;">HOMOLOG</span>' : '';
+                updEl.innerHTML = `<i class="fa-solid fa-square-check"></i> <span><span class="live-dot" title="Sincronização em tempo real ativa"></span>Última Atualização${hTag}<br>${STATE.config.lastUpdate || 'N/A'}</span>`;
+            }
         } catch (e) {}
     }
 
@@ -7536,7 +7637,62 @@
                 }
             });
         } else if (chTarget === 'AA') {
-            // Desconsidera parceiros AA individuais (DMV Móvel não vincula empresa AA)
+            const aaMetas = STATE.config.aaMetas || {};
+            Object.keys(aaMetas).forEach(fantasia => {
+                const info = aaMetas[fantasia];
+                const k = normName(fantasia);
+                const hRec = byKeyMvHist[k] || {};
+                const hasHist = (Array.isArray(hRec.vHist) && hRec.vHist.some(x => x !== null && x > 0)) ||
+                                (Array.isArray(hRec.aHist) && hRec.aHist.some(x => x !== null && x > 0));
+                const regGoals = getAaRegionGoals(info, currentRegion);
+                if (info.status === 'Inativo' && !hasHist && regGoals.mVMovel === 0 && regGoals.mAtiv === 0) return;
+                const sP = portBySellerReg[k];
+                pM[k] = {
+                    key: k, nome: fantasia, apelido: fantasia, un: '-', ar: 'Parceiro AA',
+                    mV: regGoals.mVMovel, mA: regGoals.mAtiv, hasHist, v: 0, a: 0,
+                    port: sP ? Number(sP.total || 0) : 0,
+                    vHist: Array.isArray(hRec.vHist) ? hRec.vHist : Array(nM).fill(null),
+                    aHist: Array.isArray(hRec.aHist) ? hRec.aHist : Array(nM).fill(null)
+                };
+            });
+            if (!pM['N IDENTIFICADO']) {
+                const hRecNId = byKeyMvHist['N IDENTIFICADO'] || {};
+                const sPNId = portBySellerReg['N IDENTIFICADO'];
+                pM['N IDENTIFICADO'] = {
+                    key: 'N IDENTIFICADO', nome: 'Ñ Identificado', apelido: 'Ñ Identificado',
+                    un: '-', ar: 'Parceiro AA', mV: 0, mA: 0, v: 0, a: 0,
+                    port: sPNId ? Number(sPNId.total || 0) : 0,
+                    vHist: Array.isArray(hRecNId.vHist) ? hRecNId.vHist : Array(nM).fill(null),
+                    aHist: Array(nM).fill(null)
+                };
+            }
+            mvReg.forEach(r => {
+                if (mapMovelChannel(r[1]) !== 'AA') return;
+                const rawRS = (r[4] || '').toUpperCase().trim();
+                const normRS = normName(rawRS);
+                let rawKey = (!rawRS || normRS === 'NAO IDENTIFICADO' || normRS === 'N IDENTIFICADO')
+                    ? 'Ñ Identificado'
+                    : ((STATE.config.aaMap && STATE.config.aaMap[rawRS]) || rawRS);
+                if (rawKey === rawRS && STATE.config.aaMap) {
+                    const foundAk = Object.keys(STATE.config.aaMap).find(ak => normName(ak) === normRS);
+                    if (foundAk) rawKey = STATE.config.aaMap[foundAk];
+                }
+                const k = normName(rawKey);
+                if (!k) return;
+                if (!pM[k]) {
+                    const hRec = byKeyMvHist[k] || {};
+                    const sP = portBySellerReg[k];
+                    pM[k] = {
+                        key: k, nome: rawKey.toUpperCase().trim(), apelido: rawKey.trim(),
+                        un: '-', ar: 'Parceiro AA', mV: 0, mA: 0, hasHist: false, v: 0, a: 0,
+                        port: sP ? Number(sP.total || 0) : 0,
+                        vHist: Array.isArray(hRec.vHist) ? hRec.vHist : Array(nM).fill(null),
+                        aHist: Array(nM).fill(null)
+                    };
+                }
+                pM[k].v += Number(r[5]) || 0;
+                pM[k].a += Number(r[6]) || 0;
+            });
         } else if (chTarget === 'Digital') {
             Object.keys(byKeyMvHist).forEach(hk => {
                 const hRec = byKeyMvHist[hk];
@@ -8869,33 +9025,19 @@
     // =========================================================================
     // PARSERS DE ATUALIZAÇÃO DIÁRIA (BI COM 1007 -> PRODUTOS & MÓVEL + DMV MÓVEL)
     // =========================================================================
-    function syncMovelFromProdutosCube() {
-        const pr = STATE.produtos;
-        if (!pr || !Array.isArray(pr.rows)) return { rowsCount: 0, vSum: 0, aSum: 0 };
-        const grpIdx = pr.grupos.indexOf('Móvel');
-        if (grpIdx === -1) return { rowsCount: 0, vSum: 0, aSum: 0 };
-        const dtCur = STATE.config.dtInicial || '2026-11-01';
-        const synced = [];
-        let vSum = 0, aSum = 0;
-
-        pr.rows.forEach(r => {
-            if (r[3] !== grpIdx) return;
-            const cv = Number(r[7]) || 0;
-            const ca = Number(r[8]) || 0;
-            if (cv === 0 && ca === 0) return;
-            const reg = pr.regs[r[0]] || 'SP';
-            const u   = pr.units[r[1]] || '';
-            const ch  = pr.canais[r[2]] || 'Outros';
-            const chRawLabel = ch === 'PaP' ? 'Vendas Agentes Comerciais Próprio'
-                             : (ch === 'AA' ? 'Vendas Porta à Porta Terceiros'
-                             : (ch === 'Digital' ? 'Vendas Digitais Terceiros' : ch));
-            vSum += cv;
-            aSum += ca;
-            synced.push([dtCur, chRawLabel, u, '', '', cv, ca, reg]);
-        });
-
-        STATE.movel = synced;
-        return { rowsCount: synced.length, vSum, aSum };
+    function parseIsoDateFromCell(rawCell, fallbackYmPrefix) {
+        const s = String(rawCell || '').replace(/^['"]+/, '').trim();
+        if (!s) return (fallbackYmPrefix ? `${fallbackYmPrefix}-01` : null);
+        const m1 = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+        if (m1) return `${m1[1]}-${m1[2].padStart(2, '0')}-${m1[3].padStart(2, '0')}`;
+        const m2 = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})/);
+        if (m2) {
+            const yy = m2[3].length === 2 ? '20' + m2[3] : m2[3];
+            return `${yy}-${m2[2].padStart(2, '0')}-${m2[1].padStart(2, '0')}`;
+        }
+        const ymOnly = s.match(/^(\d{4})[-/](\d{1,2})$/);
+        if (ymOnly) return `${ymOnly[1]}-${ymOnly[2].padStart(2, '0')}-01`;
+        return (fallbackYmPrefix ? `${fallbackYmPrefix}-01` : null);
     }
 
     function parseProdutosPasteData(rawText) {
@@ -8916,7 +9058,8 @@
         }
 
         const parsedRecords = [];
-        let hasCurRows = false, hasHistRows = false;
+        const movelCurRows = [];
+        let hasCurRows = false, hasHistRows = false, hasCurMovel = false;
 
         for (let i = 0; i < rows.length; i++) {
             const r = rows[i];
@@ -8943,8 +9086,10 @@
             const prod = String(r[7] || '').trim();
             if (!prod) continue;
 
-            const u = normalizeUnitKey(r[2]);
-            const ch = mapMovelChannel(r[1]);
+            const chRaw = String(r[1] || '').trim();
+            const uRaw  = String(r[2] || '').trim();
+            const u = normalizeUnitKey(uRaw);
+            const ch = mapMovelChannel(chRaw);
             const v = Math.round(parseFloat(String(r[8] || '0').replace(',', '.')) || 0);
             const a = Math.round(parseFloat(String(r[9] || '0').replace(',', '.')) || 0);
             if (v === 0 && a === 0) continue;
@@ -8953,6 +9098,16 @@
             if (isCur) hasCurRows = true;
             else hasHistRows = true;
             parsedRecords.push({ ym, isCur, reg, u, ch, grp, prod, v, a });
+
+            // BI COM 1007 (Grupo Produto = Móvel) alimenta integralmente Vendas & Ativações Móvel
+            // para Regional, Unidades, Canais, Agentes, Bko e Parceiros AA
+            if (normName(grp) === 'MOVEL' && isCur) {
+                hasCurMovel = true;
+                const isoDt = parseIsoDateFromCell(c0, curYmPrefix);
+                const grSeller = String(r[4] || '').toUpperCase().trim();
+                const fornVend = String(r[5] || '').toUpperCase().trim();
+                movelCurRows.push([isoDt, chRaw, uRaw || u, grSeller, fornVend, v, a, reg]);
+            }
         }
 
         if (parsedRecords.length === 0) return { curCount: 0, histCount: 0 };
@@ -8998,14 +9153,12 @@
             .filter(x => x.cv > 0 || x.ca > 0 || x.vH.some(v => v > 0) || x.aH.some(a => a > 0))
             .map(x => [...x.ids, x.vH, x.aH, x.cv, x.ca]);
 
-        const now = new Date();
-        const pad = n => String(n).padStart(2, '0');
-        pr.lastUpdate = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} (${STATE.config.mesVigente || ''})`;
-
-        if (hasCurRows) {
-            syncMovelFromProdutosCube();
+        if (hasCurMovel) {
+            STATE.movel = movelCurRows;
         }
-        return { curCount: curCnt, histCount: histCnt };
+
+        pr.lastUpdate = formatNowBrTimestamp();
+        return { curCount: curCnt, histCount: histCnt, movelCount: movelCurRows.length };
     }
 
     function parseMovelDetPasteData(rawText) {
@@ -9314,6 +9467,7 @@
         saveLocalStateCache();
         renderProdutos();
         renderMovelCatalogCrud();
+        refreshQuadrantUpdateBadges();
         pushCloudState(true);
         const fb = document.getElementById('import-feedback');
         if (fb) {
@@ -10518,45 +10672,219 @@
         return { projCount, histCount };
     }
 
-    function processarBDGeral() {
+    function formatNowBrTimestamp() {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        return `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+
+    function ensureQuadUpdatesSkeleton() {
+        if (!STATE.config.quadUpdates || typeof STATE.config.quadUpdates !== 'object') {
+            const baseStamp = (STATE.config.lastUpdate && STATE.config.lastUpdate !== '00/00/0000 00:00:00')
+                ? STATE.config.lastUpdate
+                : 'Base Inicial';
+            STATE.config.quadUpdates = {
+                bl: baseStamp,
+                churn: (STATE.churn && STATE.churn.lastChurnUpdate) || baseStamp,
+                prod: (STATE.produtos && STATE.produtos.lastUpdate) || baseStamp,
+                dmv: (STATE.movelDet && STATE.movelDet.lastUpdate) || baseStamp
+            };
+        }
+    }
+
+    function refreshQuadrantUpdateBadges() {
+        ensureQuadUpdatesSkeleton();
+        const qu = STATE.config.quadUpdates;
+        const setTxt = (id, prefix, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = `${prefix}: ${val || '--'}`;
+        };
+        setTxt('quad-upd-bl', 'Últ. Atualização', qu.bl);
+        setTxt('quad-upd-churn', 'Últ. Atualização', qu.churn);
+        setTxt('quad-upd-prod', 'Últ. Atualização', qu.prod);
+        setTxt('quad-upd-dmv', 'Últ. Atualização', qu.dmv);
+
+        const hBanner = document.getElementById('p10-homolog-banner');
+        if (hBanner) hBanner.style.display = IS_HOMOLOG_MODE ? 'flex' : 'none';
+    }
+
+    function createCleanStateSnapshotWithoutRollback() {
+        const clone = JSON.parse(JSON.stringify(STATE));
+        if (clone && clone.config) {
+            delete clone.config.rollbackSnapshot;
+            delete clone.config.rollbackHistory;
+        }
+        return sanitizeFirebasePayload(clone);
+    }
+
+    async function captureTotalUpdateRollbackPoint() {
+        try {
+            const snap = createCleanStateSnapshotWithoutRollback();
+            if (!snap || !snap.config || !snap.config.lastUpdate || snap.config.lastUpdate === '00/00/0000 00:00:00') return;
+            if (!Array.isArray(STATE.config.rollbackHistory)) STATE.config.rollbackHistory = [];
+            const entry = {
+                savedAt: formatNowBrTimestamp(),
+                sourceLastUpdate: snap.config.lastUpdate,
+                state: snap
+            };
+            STATE.config.rollbackHistory.unshift(entry);
+            STATE.config.rollbackHistory = STATE.config.rollbackHistory.slice(0, 3);
+            STATE.config.rollbackSnapshot = entry;
+
+            const hasDbSdk = (typeof firebase !== 'undefined' && typeof firebase.database === 'function' && window.location.protocol !== 'file:');
+            if (hasDbSdk && ensureFirebaseInit()) {
+                await firebase.database().ref(getFirebaseBackupsPath()).set(sanitizeFirebasePayload(STATE.config.rollbackHistory));
+            }
+        } catch (e) {
+            console.warn('Falha ao salvar ponto de restauração:', e);
+        }
+    }
+
+    async function rollbackToLastTotalUpdate() {
+        if (!checkAdminPass()) return;
+        let hist = Array.isArray(STATE.config.rollbackHistory) ? [...STATE.config.rollbackHistory] : [];
+        const hasDbSdk = (typeof firebase !== 'undefined' && typeof firebase.database === 'function' && window.location.protocol !== 'file:');
+        if (hist.length === 0 && hasDbSdk && ensureFirebaseInit()) {
+            try {
+                const bSnap = await firebase.database().ref(getFirebaseBackupsPath()).once('value');
+                const bVal = bSnap && bSnap.val ? bSnap.val() : null;
+                if (Array.isArray(bVal) && bVal.length > 0) hist = bVal;
+            } catch (e) {}
+        }
+        const target = hist[0] || STATE.config.rollbackSnapshot;
+        if (!target || !target.state) {
+            alert('Nenhum ponto de restauração anterior foi encontrado ainda.');
+            return;
+        }
+        const ok = confirm(`Deseja voltar o painel para a última atualização total?\n\nRestaurar versão de: ${target.sourceLastUpdate || target.savedAt}`);
+        if (!ok) return;
+
+        const restored = JSON.parse(JSON.stringify(target.state));
+        const keptUrl = STATE.config.cloudSyncUrl;
+        const keptApiKey = STATE.config.firebaseApiKey;
+        const keptAuthDom = STATE.config.firebaseAuthDomain;
+        const keptBlocked = STATE.config.blockedEmails;
+        const keptDays = STATE.config.sessionMaxDays;
+
+        Object.keys(STATE).forEach(k => delete STATE[k]);
+        Object.assign(STATE, restored);
+        if (keptUrl && !STATE.config.cloudSyncUrl) STATE.config.cloudSyncUrl = keptUrl;
+        if (keptApiKey && !STATE.config.firebaseApiKey) STATE.config.firebaseApiKey = keptApiKey;
+        if (keptAuthDom && !STATE.config.firebaseAuthDomain) STATE.config.firebaseAuthDomain = keptAuthDom;
+        if (keptBlocked) STATE.config.blockedEmails = keptBlocked;
+        if (keptDays) STATE.config.sessionMaxDays = keptDays;
+        STATE.config.syncRev = (Number(STATE.config.syncRev) || 0) + 1;
+        STATE.config.lastUpdate = formatNowBrTimestamp();
+
+        ensureRegionSkeletons();
         ensureChurnSkeleton();
+        ensureProdutosSkeleton();
+        ensureQuadUpdatesSkeleton();
+        normalizeLeaderCapacityState();
+        syncAllAgentGoalsFromMatrix();
+        saveLocalStateCache();
+        renderAll();
+        refreshQuadrantUpdateBadges();
+        await pushCloudState(true);
+
+        const fb = document.getElementById('import-feedback');
+        if (fb) {
+            fb.style.color = 'var(--evo-blue)';
+            fb.textContent = `Painel revertido com sucesso para a atualização de ${target.sourceLastUpdate || target.savedAt} e publicado na Nuvem!`;
+        }
+    }
+
+    async function mirrorProductionToHomolog() {
+        if (!IS_HOMOLOG_MODE) return;
+        if (!checkAdminPass()) return;
+        const prodUrl = normalizeCloudUrl(STATE.config.cloudSyncUrl || '');
+        if (!prodUrl) { alert('URL da nuvem não configurada.'); return; }
+        const st = document.getElementById('cloud-sync-status');
+        if (st) { st.style.color = 'var(--evo-blue)'; st.textContent = 'Espelhando dados da Produção...'; }
+        try {
+            let authParam = await getFirebaseAuthQueryParam(prodUrl.includes('?'), false);
+            let res = await fetch(prodUrl + (prodUrl.includes('?') ? '&' : '?') + 't=' + Date.now() + authParam, { cache: 'no-store' });
+            if (res.ok) {
+                const prodData = await res.json();
+                if (prodData && prodData.config) {
+                    applyRemoteState(prodData, true);
+                    saveLocalStateCache();
+                    renderAll();
+                    refreshQuadrantUpdateBadges();
+                    await pushCloudState(true);
+                    if (st) { st.style.color = 'var(--green)'; st.textContent = 'Produção espelhada na Homologação!'; }
+                }
+            }
+        } catch (e) {
+            if (st) { st.style.color = 'var(--red)'; st.textContent = 'Falha ao espelhar Produção.'; }
+        }
+    }
+
+    async function processarBDGeral() {
+        ensureChurnSkeleton();
+        ensureProdutosSkeleton();
+        ensureQuadUpdatesSkeleton();
+
+        const rawBi = ((document.getElementById('bi-paste-area') && document.getElementById('bi-paste-area').value) || '').trim();
+        const rawChurn = ((document.getElementById('churn-paste-area') && document.getElementById('churn-paste-area').value) || '').trim();
+        const rawProdutos = ((document.getElementById('produtos-paste-area') && document.getElementById('produtos-paste-area').value) || '').trim();
+        const rawMovelDet = ((document.getElementById('movel-det-paste-area') && document.getElementById('movel-det-paste-area').value) || '').trim();
+        const hasAnyPaste = !!(rawBi || rawChurn || rawProdutos || rawMovelDet);
+
+        if (hasAnyPaste) {
+            await captureTotalUpdateRollbackPoint();
+        }
+
         STATE.config.dtInicial = document.getElementById('cfg-dt-ini').value || STATE.config.dtInicial;
         STATE.config.duTotal = Number(document.getElementById('cfg-du-tt').value) || STATE.config.duTotal;
 
-        const now = new Date();
-        const pad = n => String(n).padStart(2, '0');
-        STATE.config.lastUpdate = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        const stampNow = formatNowBrTimestamp();
+        STATE.config.lastUpdate = stampNow;
+        STATE.config.syncRev = (Number(STATE.config.syncRev) || 0) + 1;
 
-        const rawChurn = (document.getElementById('churn-paste-area') && document.getElementById('churn-paste-area').value || '').trim();
         const churnRes = rawChurn ? parseChurnPasteData(rawChurn) : { projCount: 0, histCount: 0 };
+        if (rawChurn && (churnRes.projCount > 0 || churnRes.histCount > 0)) {
+            STATE.config.quadUpdates.churn = stampNow;
+            const taC = document.getElementById('churn-paste-area');
+            if (taC) taC.value = '';
+        }
 
-        const rawProdutos = (document.getElementById('produtos-paste-area') && document.getElementById('produtos-paste-area').value || '').trim();
-        const prodRes = rawProdutos ? parseProdutosPasteData(rawProdutos) : { curCount: 0, histCount: 0 };
+        const prodRes = rawProdutos ? parseProdutosPasteData(rawProdutos) : { curCount: 0, histCount: 0, movelCount: 0 };
+        if (rawProdutos && (prodRes.curCount > 0 || prodRes.histCount > 0)) {
+            STATE.config.quadUpdates.prod = stampNow;
+            const taP = document.getElementById('produtos-paste-area');
+            if (taP) taP.value = '';
+        }
 
-        const rawMovelDet = (document.getElementById('movel-det-paste-area') && document.getElementById('movel-det-paste-area').value || '').trim();
         const mdetRes = rawMovelDet ? parseMovelDetPasteData(rawMovelDet) : { curCount: 0, histCount: 0 };
+        if (rawMovelDet && (mdetRes.curCount > 0 || mdetRes.histCount > 0 || (mdetRes.portCount || 0) > 0)) {
+            STATE.config.quadUpdates.dmv = stampNow;
+            const taD = document.getElementById('movel-det-paste-area');
+            if (taD) taD.value = '';
+        }
 
         collectMovelCatalogFromInputs();
 
-        const raw = document.getElementById('bi-paste-area').value.trim();
-        if (!raw) {
+        if (!rawBi) {
             syncAllAgentGoalsFromMatrix();
             saveLocalStateCache();
             renderAll();
+            refreshQuadrantUpdateBadges();
             pushCloudState(false);
             const fbEmpty = document.getElementById('import-feedback');
             if (fbEmpty) {
                 fbEmpty.style.color = 'var(--green)';
                 const parts = [];
                 if (rawChurn) parts.push(`Churn (${churnRes.projCount} proj. / ${churnRes.histCount} hist.)`);
-                if (rawProdutos) parts.push(`Produtos (${prodRes.curCount} mês / ${prodRes.histCount} hist.)`);
-                if (rawMovelDet) parts.push(`Móvel Det. (${mdetRes.curCount} mês / ${mdetRes.histCount} hist.)`);
+                if (rawProdutos) parts.push(`Produtos (${prodRes.curCount} mês / ${prodRes.histCount} hist. | Móvel: ${prodRes.movelCount || 0} reg.)`);
+                if (rawMovelDet) parts.push(`DMV Móvel (${mdetRes.curCount} mês / ${mdetRes.histCount} hist. | Portab.: ${mdetRes.portCount || 0})`);
                 fbEmpty.textContent = parts.length > 0
                     ? `${parts.join(' | ')} atualizado(s) e publicado(s) na Nuvem preservando a BD Geral!`
                     : 'Parâmetros, catálogo móvel, metas e portabilidades atualizados e publicados na Nuvem!';
             }
             return;
         }
+        STATE.config.quadUpdates.bl = stampNow;
 
         const delim = raw.includes('\t') ? '\t' : (raw.includes(';') ? ';' : ',');
         const parsed = Papa.parse(raw, { delimiter: delim, skipEmptyLines: true }).data;
@@ -10673,12 +11001,17 @@
             }
         });
 
-        if (newBL.length > 0) STATE.bl = newBL;
+        if (newBL.length > 0) {
+            STATE.bl = newBL;
+            const taBi = document.getElementById('bi-paste-area');
+            if (taBi) taBi.value = '';
+        }
         if (newMV.length > 0 && !rawProdutos) STATE.movel = newMV;
 
         syncAllAgentGoalsFromMatrix();
         saveLocalStateCache();
         renderAll();
+        refreshQuadrantUpdateBadges();
         pushCloudState(false);
 
         const sumBlV = newBL.reduce((s, r) => s + (Number(r[6]) || 0), 0);
@@ -11280,8 +11613,9 @@
                     }
                 }
 
-                let authParam = await getFirebaseAuthQueryParam(true, false);
-                let res = await fetch(cloudUrl + (cloudUrl.includes('?') ? '&' : '?') + 't=' + Date.now() + authParam, { cache: 'no-store' });
+                const targetJsonUrl = getEffectiveCloudJsonUrl();
+                let authParam = await getFirebaseAuthQueryParam(targetJsonUrl.includes('?'), false);
+                let res = await fetch(targetJsonUrl + (targetJsonUrl.includes('?') ? '&' : '?') + 't=' + Date.now() + authParam, { cache: 'no-store' });
                 if ((res.status === 401 || res.status === 403) && firebaseAuthReady && firebase.auth().currentUser) {
                     authParam = await getFirebaseAuthQueryParam(true, true);
                     res = await fetch(cloudUrl + (cloudUrl.includes('?') ? '&' : '?') + 't=' + Date.now() + authParam, { cache: 'no-store' });
