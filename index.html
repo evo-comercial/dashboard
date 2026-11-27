@@ -3917,16 +3917,12 @@
             bdDuCorridos = Math.min(duTotal, Math.max(1, bDu));
         }
 
-        const todayMidnight = new Date();
-        todayMidnight.setHours(0, 0, 0, 0);
-        const curMonthPrefix = `${todayMidnight.getFullYear()}-${String(todayMidnight.getMonth() + 1).padStart(2, '0')}`;
-        let isBdOutdatedForToday = false;
-        if (dtIniStr.slice(0, 7) === curMonthPrefix && todayMidnight >= start && todayMidnight <= endMonth) {
-            const todayIso = `${todayMidnight.getFullYear()}-${String(todayMidnight.getMonth() + 1).padStart(2, '0')}-${String(todayMidnight.getDate()).padStart(2, '0')}`;
-            if (!maxBlDateStr || maxBlDateStr < todayIso) {
-                isBdOutdatedForToday = true;
-            }
-        }
+        const todayNow = new Date();
+        const pad2 = n => String(n).padStart(2, '0');
+        const todayBrStr = `${pad2(todayNow.getDate())}/${pad2(todayNow.getMonth() + 1)}/${todayNow.getFullYear()}`;
+        const lastUpdStr = String((STATE.config && STATE.config.lastUpdate) || '').trim();
+        const hasUpdatedToday = lastUpdStr.startsWith(todayBrStr);
+        const isBdOutdatedForToday = !hasUpdatedToday;
         const maxBlDateBr = maxBlDateStr ? maxBlDateStr.split('-').reverse().slice(0, 2).join('/') : 'Sem BD';
         const bdFator = duTotal / bdDuCorridos;
 
@@ -4115,14 +4111,15 @@
             const duEl = document.getElementById('du-indicator');
             if (duEl && du) {
                 if (du.isBdOutdatedForToday) {
-                    const bdDuTxt = String(du.bdDuCorridos).replace('.', ',');
-                    const bdFatTxt = du.bdFator.toFixed(2).replace('.', ',');
-                    duEl.textContent = `BD até ${du.maxBlDateBr} • DU: ${bdDuTxt} / ${du.duTotal} (${bdFatTxt}x)`;
+                    const nowD = new Date();
+                    const p2 = n => String(n).padStart(2, '0');
+                    const hojeBr = `${p2(nowD.getDate())}/${p2(nowD.getMonth() + 1)}`;
+                    duEl.textContent = `Pendente hoje (${hojeBr}) • DU: ${du.duCorridos} / ${du.duTotal} (${du.fator.toFixed(2).replace('.', ',')}x)`;
                     duEl.style.background = '#DC2626';
                     duEl.style.borderColor = '#FCA5A5';
                     duEl.style.color = '#FFFFFF';
                     duEl.style.fontWeight = '700';
-                    duEl.title = 'Dia virou e a BD Geral ainda não foi atualizada hoje. Exibindo último dia da BD Geral e seus DU.';
+                    duEl.title = 'Ainda não houve atualização hoje. Pílula em vermelho até a atualização do dia ocorrer.';
                 } else {
                     duEl.textContent = `DU: ${du.duCorridos} / ${du.duTotal} (Fator ${du.fator.toFixed(2).replace('.', ',')}x)`;
                     duEl.style.background = '';
@@ -9196,7 +9193,7 @@
 
         for (let i = 0; i < rows.length; i++) {
             const r = rows[i];
-            if (!r || r.length < 23) continue;
+            if (!r || r.length < 13) continue;
             const dtStr = String(r[3] || '').trim();
             if (/^data_venda/i.test(dtStr)) continue;
 
@@ -9211,9 +9208,9 @@
             const stProt = String(r[15] || '').trim();
             const stOf   = String(r[19] || '').trim();
             const isAtiv = (stProt === 'Encerrado' || stOf === 'Ativo') ? 1 : 0;
-            const valNum = parseFloat(String(r[22] || '0').replace(/R\$/g, '').replace(',', '.').trim()) || 0;
-            const stPort = String(r[24] || '').trim();
-            const dtPortRaw = String(r[25] || '').trim();
+            const valNum = (r.length > 22) ? (parseFloat(String(r[22] || '0').replace(/R\$/g, '').replace(',', '.').trim()) || 0) : 0;
+            const stPort = (r.length > 24) ? String(r[24] || '').trim() : '';
+            const dtPortRaw = (r.length > 25) ? String(r[25] || '').trim() : '';
 
             let ymVenda = '';
             const mv1 = dtStr.match(/^(\d{4})[-/](\d{1,2})/);
@@ -9315,6 +9312,29 @@
                 };
             });
 
+            const activeAgByReg = { CO: [], RJ: [], RS: [], SP: [] };
+            (STATE.agents || []).forEach(ag => {
+                if (!ag || ag[7] === 'Inativo') return;
+                const rg = ALL_REGIONS.includes(ag[2]) ? ag[2] : 'SP';
+                activeAgByReg[rg].push({ key: normName(ag[0]), parts: normName(ag[0]).split(' ').filter(Boolean) });
+            });
+            function resolvePortSellerKey(rawGrNorm, rg) {
+                if (!rawGrNorm) return '';
+                const pool = activeAgByReg[rg] || [];
+                const exact = pool.find(p => p.key === rawGrNorm);
+                if (exact) return exact.key;
+                const grParts = rawGrNorm.split(' ').filter(Boolean);
+                if (grParts.length >= 2) {
+                    const first = grParts[0];
+                    const last = grParts[grParts.length - 1];
+                    const prefixHit = pool.find(p => p.key.startsWith(rawGrNorm + ' ') || rawGrNorm.startsWith(p.key + ' '));
+                    if (prefixHit) return prefixHit.key;
+                    const flHit = pool.find(p => p.parts.length >= 2 && p.parts[0] === first && p.parts[p.parts.length - 1] === last);
+                    if (flHit) return flHit.key;
+                }
+                return rawGrNorm;
+            }
+
             const sellerCur = { CO: {}, RJ: {}, RS: {}, SP: {} };
             portRecs.forEach(prRec => {
                 const rId = getOrAddIdx(mp.regs, prRec.reg);
@@ -9328,11 +9348,12 @@
                 if (prRec.kind === 'done') {
                     if (prRec.isCur) {
                         pMap[k].done += 1;
-                        if (prRec.grNorm) {
-                            const sn = sellerCur[prRec.reg].setdefault ? sellerCur[prRec.reg] : sellerCur[prRec.reg];
-                            if (!sn[prRec.grNorm]) sn[prRec.grNorm] = { total: 0, byCh: {} };
-                            sn[prRec.grNorm].total += 1;
-                            sn[prRec.grNorm].byCh[prRec.ch] = (sn[prRec.grNorm].byCh[prRec.ch] || 0) + 1;
+                        const resolvedKey = resolvePortSellerKey(prRec.grNorm, prRec.reg);
+                        if (resolvedKey) {
+                            const sn = sellerCur[prRec.reg];
+                            if (!sn[resolvedKey]) sn[resolvedKey] = { total: 0, byCh: {} };
+                            sn[resolvedKey].total += 1;
+                            sn[resolvedKey].byCh[prRec.ch] = (sn[resolvedKey].byCh[prRec.ch] || 0) + 1;
                         }
                     } else {
                         const mNum = parseInt(prRec.ym.split('-')[1], 10) - 1;
@@ -9348,7 +9369,7 @@
                 .map(x => [...x.ids, x.pH, x.done, x.prog]);
 
             if (!mp.bySeller) mp.bySeller = { CO: {}, RJ: {}, RS: {}, SP: {} };
-            if (hasCurPort) {
+            if (hasCurPort || portRecs.some(x => x.kind === 'done')) {
                 ALL_REGIONS.forEach(rg => {
                     const prevS = mp.bySeller[rg] || {};
                     const curS  = sellerCur[rg] || {};
@@ -9596,16 +9617,36 @@
             if (a[2] === reg && a[4] === 'Bko' && a[7] !== 'Inativo') bkoSet.add(normName(a[0]));
         });
 
+        const activeKeysReg = [];
+        STATE.agents.forEach(a => {
+            if (a[2] === reg && a[7] !== 'Inativo') {
+                const kA = normName(a[0]);
+                const pA = kA.split(' ').filter(Boolean);
+                activeKeysReg.push({ key: kA, first: pA[0] || '', last: pA[pA.length - 1] || '' });
+            }
+        });
+        function resolveMvAgentKey(rawN) {
+            if (!rawN) return '';
+            if (activeKeysReg.some(x => x.key === rawN)) return rawN;
+            const p = rawN.split(' ').filter(Boolean);
+            if (p.length >= 2) {
+                const hit = activeKeysReg.find(x => x.first === p[0] && x.last === p[p.length - 1]);
+                if (hit) return hit.key;
+            }
+            return rawN;
+        }
+
         const mvByAgent = {};
         let kelvinAtivReal = 0;
         mvReg.forEach(r => {
-            const n = normName(r[3]);
+            const rawN = normName(r[3]);
+            const n = resolveMvAgentKey(rawN);
             const canalEntrada = (r[1] || '').trim();
             const ativ = Number(r[6]) || 0;
             if (!mvByAgent[n]) mvByAgent[n] = 0;
             mvByAgent[n] += ativ;
 
-            if (bkoSet.has(n) && (canalEntrada === 'Vendas Porta à Porta Terceiros' || canalEntrada === 'AA')) {
+            if ((bkoSet.has(n) || bkoSet.has(rawN)) && (canalEntrada === 'Vendas Porta à Porta Terceiros' || canalEntrada === 'AA')) {
                 kelvinAtivReal += ativ;
             }
         });
@@ -10679,30 +10720,38 @@
     }
 
     function ensureQuadUpdatesSkeleton() {
+        const baseStamp = (STATE.config && STATE.config.lastUpdate && STATE.config.lastUpdate !== '00/00/0000 00:00:00')
+            ? STATE.config.lastUpdate
+            : 'Base Inicial';
         if (!STATE.config.quadUpdates || typeof STATE.config.quadUpdates !== 'object') {
-            const baseStamp = (STATE.config.lastUpdate && STATE.config.lastUpdate !== '00/00/0000 00:00:00')
-                ? STATE.config.lastUpdate
-                : 'Base Inicial';
             STATE.config.quadUpdates = {
                 bl: baseStamp,
                 churn: (STATE.churn && STATE.churn.lastChurnUpdate) || baseStamp,
                 prod: (STATE.produtos && STATE.produtos.lastUpdate) || baseStamp,
                 dmv: (STATE.movelDet && STATE.movelDet.lastUpdate) || baseStamp
             };
+        } else {
+            if (!STATE.config.quadUpdates.bl) STATE.config.quadUpdates.bl = baseStamp;
+            if (!STATE.config.quadUpdates.churn) STATE.config.quadUpdates.churn = (STATE.churn && STATE.churn.lastChurnUpdate) || baseStamp;
+            if (!STATE.config.quadUpdates.prod) STATE.config.quadUpdates.prod = (STATE.produtos && STATE.produtos.lastUpdate) || baseStamp;
+            if (!STATE.config.quadUpdates.dmv) STATE.config.quadUpdates.dmv = (STATE.movelDet && STATE.movelDet.lastUpdate) || baseStamp;
         }
     }
 
     function refreshQuadrantUpdateBadges() {
         ensureQuadUpdatesSkeleton();
         const qu = STATE.config.quadUpdates;
+        const fallbackGlobal = (STATE.config && STATE.config.lastUpdate && STATE.config.lastUpdate !== '00/00/0000 00:00:00')
+            ? STATE.config.lastUpdate
+            : '--';
         const setTxt = (id, prefix, val) => {
             const el = document.getElementById(id);
-            if (el) el.textContent = `${prefix}: ${val || '--'}`;
+            if (el) el.textContent = `${prefix}: ${val || fallbackGlobal}`;
         };
-        setTxt('quad-upd-bl', 'Últ. Atualização', qu.bl);
-        setTxt('quad-upd-churn', 'Últ. Atualização', qu.churn);
-        setTxt('quad-upd-prod', 'Últ. Atualização', qu.prod);
-        setTxt('quad-upd-dmv', 'Últ. Atualização', qu.dmv);
+        setTxt('quad-upd-bl', 'Últ. Atualização', qu.bl || fallbackGlobal);
+        setTxt('quad-upd-churn', 'Últ. Atualização', qu.churn || fallbackGlobal);
+        setTxt('quad-upd-prod', 'Últ. Atualização', qu.prod || fallbackGlobal);
+        setTxt('quad-upd-dmv', 'Últ. Atualização', qu.dmv || fallbackGlobal);
 
         const hBanner = document.getElementById('p10-homolog-banner');
         if (hBanner) hBanner.style.display = IS_HOMOLOG_MODE ? 'flex' : 'none';
