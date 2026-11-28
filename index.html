@@ -2142,6 +2142,218 @@
             .mv-offers-dialog, .prod-rules-dialog { padding: 0.75rem 0.85rem !important; }
         }
 
+
+        /* ==========================================================================
+           ABA 9: SIMULADOR EXECUTIVO — RÓTULOS DESTACADOS, COLUNA +SIMULADO & TABELA AMPLA
+           ========================================================================== */
+        .sim-controls-bar {
+            width: 100%;
+            gap: 16px !important;
+            align-items: center;
+        }
+        .sim-ctrl-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-hdr);
+            font-size: 0.96rem;
+            font-weight: 800;
+            color: var(--evo-navy);
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+        }
+        .sim-ctrl-divider {
+            width: 1.5px;
+            height: 28px;
+            background: #BFDBFE;
+            margin: 0 2px;
+            flex-shrink: 0;
+        }
+        .sim-agent-select-el {
+            min-width: 300px;
+            padding: 7px 12px !important;
+            font-family: var(--font-hdr) !important;
+            font-size: 0.89rem !important;
+            font-weight: 700 !important;
+            color: var(--evo-navy) !important;
+            border: 1.5px solid #93C5FD !important;
+            border-radius: 6px !important;
+            background: #FFFFFF !important;
+            box-shadow: 0 1px 2px rgba(0, 27, 94, 0.06);
+            cursor: pointer;
+        }
+        .sim-agent-select-el:focus {
+            outline: none;
+            border-color: var(--evo-blue) !important;
+            box-shadow: 0 0 0 3px rgba(0, 56, 168, 0.14);
+        }
+        .sim-num-input {
+            width: 74px !important;
+            padding: 6px 8px !important;
+            font-family: var(--font-hdr) !important;
+            font-size: 0.98rem !important;
+            font-weight: 800 !important;
+            text-align: center !important;
+            color: var(--evo-blue) !important;
+            background: #FFFFFF !important;
+            border: 1.5px solid var(--evo-blue) !important;
+            border-radius: 6px !important;
+            box-shadow: 0 1px 3px rgba(0, 56, 168, 0.08);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+        .sim-num-input:focus {
+            outline: none;
+            border-color: var(--evo-cyan) !important;
+            background: #F0F9FF !important;
+            box-shadow: 0 0 0 3px rgba(0, 168, 232, 0.22);
+        }
+        .sim-reset-btn {
+            margin-left: auto;
+            padding: 7px 14px !important;
+            font-size: 0.83rem !important;
+            font-weight: 700 !important;
+            border-radius: 6px !important;
+        }
+
+        .sim-table-card {
+            padding: 0.85rem 1.05rem 1.0rem !important;
+            gap: 0.72rem !important;
+        }
+        .sim-table-header {
+            padding-bottom: 0.58rem;
+            border-bottom: 2px solid #DBEAFE;
+        }
+        .sim-main-title {
+            font-family: var(--font-hdr) !important;
+            font-size: 1.08rem !important;
+            font-weight: 800 !important;
+            color: var(--evo-navy) !important;
+            letter-spacing: -0.015em !important;
+            gap: 10px !important;
+        }
+        .sim-title-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 7px;
+            background: linear-gradient(135deg, #002A72 0%, #0052CC 100%);
+            color: #FFFFFF;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.90rem;
+            box-shadow: 0 2px 6px rgba(0, 56, 168, 0.22);
+            flex-shrink: 0;
+        }
+        .sim-main-title .sim-title-icon i { color: #FFFFFF !important; }
+        .sim-session-badge {
+            font-size: 0.76rem !important;
+            padding: 4px 10px !important;
+            font-weight: 700 !important;
+        }
+
+        .sim-table-wrap {
+            border-radius: 7px !important;
+            border: 1px solid #C7D5E5 !important;
+        }
+        table.tbl-simulador {
+            width: 100%;
+            font-size: 0.95rem !important;
+            border-collapse: collapse;
+        }
+        table.tbl-simulador thead th {
+            font-size: 0.83rem !important;
+            font-weight: 700 !important;
+            padding: 0.84rem 0.90rem !important;
+            background: #DCE7F5;
+            color: var(--evo-navy);
+            border-bottom: 2px solid var(--border-grp);
+            letter-spacing: 0.025em;
+        }
+        table.tbl-simulador tbody td {
+            font-size: 0.96rem !important;
+            padding: 1.0rem 0.90rem !important;
+            vertical-align: middle;
+        }
+        table.tbl-simulador tbody td.sim-pilar-col {
+            font-family: var(--font-hdr);
+            font-size: 0.98rem !important;
+            font-weight: 700 !important;
+            color: var(--evo-navy);
+        }
+        table.tbl-simulador tbody td.sim-realfinal-col {
+            font-family: var(--font-hdr);
+            font-size: 1.04rem !important;
+            font-weight: 800 !important;
+            color: var(--evo-navy);
+        }
+        table.tbl-simulador tbody td.sim-ating-col {
+            font-family: var(--font-hdr);
+            font-size: 1.0rem !important;
+            font-weight: 800 !important;
+        }
+        table.tbl-simulador .sim-port-badge {
+            font-size: 0.92rem !important;
+            padding: 4px 12px !important;
+            font-weight: 800 !important;
+            border-radius: 5px;
+        }
+
+        /* COLUNA + SIMULADO EM ALTO DESTAQUE VISUAL */
+        table.tbl-simulador thead th.col-sim-highlight {
+            background: linear-gradient(135deg, #002A72 0%, #0052CC 100%) !important;
+            color: #FFFFFF !important;
+            font-size: 0.87rem !important;
+            font-weight: 800 !important;
+            letter-spacing: 0.03em;
+            border-left: 2px solid #0038A8 !important;
+            border-right: 2px solid #0038A8 !important;
+            border-bottom: 2.5px solid #00A8E8 !important;
+        }
+        table.tbl-simulador tbody td.col-sim-highlight {
+            background: #EFF6FF !important;
+            border-left: 2px solid #60A5FA !important;
+            border-right: 2px solid #60A5FA !important;
+        }
+        table.tbl-simulador tbody td.col-sim-highlight.is-active {
+            background: #DBEAFE !important;
+        }
+        table.tbl-simulador tbody tr:last-child td.col-sim-highlight {
+            border-bottom: 2px solid #60A5FA !important;
+        }
+        .sim-delta-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 56px;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-family: var(--font-hdr);
+            font-size: 1.02rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+        .sim-delta-pill.active {
+            background: linear-gradient(135deg, #0038A8 0%, #0052CC 100%);
+            color: #FFFFFF;
+            box-shadow: 0 2px 6px rgba(0, 56, 168, 0.25);
+        }
+        .sim-delta-pill.zero {
+            background: #FFFFFF;
+            color: #0038A8;
+            border: 1.5px dashed #93C5FD;
+        }
+
+        @media (max-width: 960px) {
+            .sim-controls-bar { gap: 10px !important; }
+            .sim-ctrl-divider { display: none; }
+            .sim-ctrl-label { font-size: 0.86rem; }
+            .sim-agent-select-el { min-width: 210px; width: 100%; font-size: 0.83rem !important; }
+            .sim-num-input { width: 64px !important; font-size: 0.90rem !important; }
+            .sim-main-title { font-size: 0.95rem !important; }
+            table.tbl-simulador thead th { font-size: 0.74rem !important; padding: 0.60rem 0.55rem !important; }
+            table.tbl-simulador tbody td { font-size: 0.84rem !important; padding: 0.72rem 0.55rem !important; }
+        }
+
     </style>
 </head>
 <body>
@@ -2566,25 +2778,39 @@
     <!-- ABA 9: SIMULADOR -->
     <section class="panel" id="p9">
         <div class="sticky-top-deck" id="p9-top-deck">
-            <div class="card-box sticky-subbar" id="p9-sticky-bar" style="padding:0.42rem 0.75rem; background:linear-gradient(90deg, #F8FAFC 0%, #EFF6FF 100%); border-color:#BFDBFE;">
-                <div class="filter-bar" style="width:100%;">
-                    <label style="font-size:0.75rem; font-weight:600; color:var(--evo-navy);">Colaborador / Líder:
-                        <select id="sim-agent-select" onchange="runSimulator()" style="min-width:270px; font-weight:600; margin-left:4px;"></select>
+            <div class="card-box sticky-subbar" id="p9-sticky-bar" style="padding:0.62rem 1.0rem; background:linear-gradient(90deg, #F8FAFC 0%, #EFF6FF 100%); border-color:#93C5FD;">
+                <div class="filter-bar sim-controls-bar">
+                    <label class="sim-ctrl-label">
+                        <span>Colaborador / Líder:</span>
+                        <select id="sim-agent-select" class="sim-agent-select-el" onchange="runSimulator()"></select>
                     </label>
-                    <label style="font-size:0.75rem; font-weight:600; color:var(--evo-navy); margin-left:8px;">+ Altas: <input type="number" id="sim-add-altas" value="3" min="0" style="width:60px; font-weight:600;" oninput="runSimulator()"></label>
-                    <label style="font-size:0.75rem; font-weight:600; color:var(--evo-navy); margin-left:8px;">+ Ativações: <input type="number" id="sim-add-ativ" value="2" min="0" style="width:60px; font-weight:600;" oninput="runSimulator()"></label>
-                    <label style="font-size:0.75rem; font-weight:600; color:var(--evo-navy); margin-left:8px;">+ Portabilidade: <input type="number" id="sim-add-port" value="1" min="0" style="width:60px; font-weight:600;" oninput="runSimulator()"></label>
-                    <button class="btn secondary" onclick="resetSimulator()" style="margin-left:auto;"><i class="fa-solid fa-rotate-left"></i> Zerar Simulação</button>
+                    <span class="sim-ctrl-divider"></span>
+                    <label class="sim-ctrl-label">
+                        <span>+ Altas:</span>
+                        <input type="number" id="sim-add-altas" class="sim-num-input" value="0" min="0" onfocus="this.select()" oninput="runSimulator()">
+                    </label>
+                    <label class="sim-ctrl-label">
+                        <span>+ Ativações:</span>
+                        <input type="number" id="sim-add-ativ" class="sim-num-input" value="0" min="0" onfocus="this.select()" oninput="runSimulator()">
+                    </label>
+                    <label class="sim-ctrl-label">
+                        <span>+ Portabilidade:</span>
+                        <input type="number" id="sim-add-port" class="sim-num-input" value="0" min="0" onfocus="this.select()" oninput="runSimulator()">
+                    </label>
+                    <button class="btn secondary sim-reset-btn" onclick="resetSimulator()"><i class="fa-solid fa-rotate-left"></i> Zerar Simulação</button>
                 </div>
             </div>
             <div id="sim-summary-cards"></div>
         </div>
-        <div class="card-box one-page-fill-card" style="padding:0.55rem 0.78rem; gap:0.45rem;">
-            <div class="box-header">
-                <div class="box-title" style="font-size:0.82rem;"><i class="fa-solid fa-sliders"></i> Simulador Oficial de Eficiência (% Global) — Detalhamento por Pilar</div>
-                <span class="badge badge-cyan"><i class="fa-solid fa-users-viewfinder"></i> Sessão Individual Isolada</span>
+        <div class="card-box one-page-fill-card sim-table-card">
+            <div class="box-header sim-table-header">
+                <div class="box-title sim-main-title">
+                    <span class="sim-title-icon"><i class="fa-solid fa-sliders"></i></span>
+                    <span>Simulador Oficial de Eficiência (% Global) — Detalhamento por Pilar</span>
+                </div>
+                <span class="badge badge-cyan sim-session-badge"><i class="fa-solid fa-users-viewfinder"></i> Sessão Individual Isolada</span>
             </div>
-            <div class="table-wrap" id="sim-result-table"></div>
+            <div class="table-wrap sim-table-wrap" id="sim-result-table"></div>
         </div>
     </section>
 
@@ -5052,7 +5278,16 @@
     }
 
     function openPanel(idx) {
+        const prevPanelIdx = activePanelIdx;
         activePanelIdx = Number(idx) || 1;
+        if (activePanelIdx === 9 && prevPanelIdx !== 9) {
+            const sAlt = document.getElementById('sim-add-altas');
+            const sAtv = document.getElementById('sim-add-ativ');
+            const sPrt = document.getElementById('sim-add-port');
+            if (sAlt) sAlt.value = 0;
+            if (sAtv) sAtv.value = 0;
+            if (sPrt) sPrt.value = 0;
+        }
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => {
             const dp = b.getAttribute('data-panel');
@@ -5061,7 +5296,7 @@
         const targetEl = document.getElementById('p' + activePanelIdx);
         if (targetEl) targetEl.classList.add('active');
         syncHeaderContextualControls(activePanelIdx);
-        if (dirtyPanels.has(activePanelIdx) || activePanelIdx === 1 || activePanelIdx === 3 || activePanelIdx === 5 || activePanelIdx === 10 || activePanelIdx === 12) {
+        if (dirtyPanels.has(activePanelIdx) || activePanelIdx === 1 || activePanelIdx === 3 || activePanelIdx === 5 || activePanelIdx === 9 || activePanelIdx === 10 || activePanelIdx === 12) {
             renderPanelByIdx(activePanelIdx);
         }
         if (activePanelIdx === 10) refreshQuadrantUpdateBadges();
@@ -11713,12 +11948,12 @@
         const g1Ok = simCalc.eficGlobal >= 80;
         const g2Ok = simPctAltas >= 100;
 
-        document.getElementById('sim-result-table').innerHTML = `<table>
+        document.getElementById('sim-result-table').innerHTML = `<table class="tbl-simulador">
             <thead><tr>
                 <th class="left grp-sep" style="color:var(--evo-navy);"><i class="fa-solid fa-user-astronaut"></i> Indicador (${item.isLeader ? 'Líder: ' + item.nome : 'Agente: ' + item.nome})</th>
                 <th>Meta</th>
                 <th>Real Atual</th>
-                <th style="background:#F1F5F9; color:var(--evo-blue);">+ Simulado</th>
+                <th class="col-sim-highlight"><i class="fa-solid fa-bolt" style="color:#7DD3FC; margin-right:4px;"></i> + Simulado</th>
                 <th>Real Final</th>
                 <th class="grp-sep">Projeção / Tendência</th>
                 <th class="grp-sep">% Atingimento Novo</th>
@@ -11726,33 +11961,33 @@
             </tr></thead>
             <tbody>
                 <tr>
-                    <td class="left grp-sep"><b>Altas (Banda Larga)</b></td>
+                    <td class="left grp-sep sim-pilar-col">Altas (Banda Larga)</td>
                     <td>${fmtInt(item.metaAltas)}</td>
                     <td>${fmtInt(item.realAltas)}</td>
-                    <td style="color:var(--evo-blue);font-weight:700;background:#F8FAFC;">+${addAltas}</td>
-                    <td><b>${fmtInt(simRealAltas)}</b></td>
+                    <td class="col-sim-highlight ${addAltas > 0 ? 'is-active' : ''}"><span class="sim-delta-pill ${addAltas > 0 ? 'active' : 'zero'}">+${addAltas}</span></td>
+                    <td class="sim-realfinal-col">${fmtInt(simRealAltas)}</td>
                     <td class="grp-sep">${fmtInt(simTendAltas)}</td>
-                    <td class="grp-sep ${simPctAltas >= 100 ? 'val-green' : 'val-red'}">${fmtPct(simPctAltas, 1)}</td>
+                    <td class="grp-sep sim-ating-col ${simPctAltas >= 100 ? 'val-green' : 'val-red'}">${fmtPct(simPctAltas, 1)}</td>
                     <td><b>50%</b></td>
                 </tr>
                 <tr>
-                    <td class="left grp-sep"><b>Ativações (Móvel)</b></td>
+                    <td class="left grp-sep sim-pilar-col">Ativações (Móvel)</td>
                     <td>${fmtInt(item.metaAtiv)}</td>
                     <td>${fmtInt(item.realAtiv)}</td>
-                    <td style="color:var(--evo-blue);font-weight:700;background:#F8FAFC;">+${addAtiv}</td>
-                    <td><b>${fmtInt(simRealAtiv)}</b></td>
+                    <td class="col-sim-highlight ${addAtiv > 0 ? 'is-active' : ''}"><span class="sim-delta-pill ${addAtiv > 0 ? 'active' : 'zero'}">+${addAtiv}</span></td>
+                    <td class="sim-realfinal-col">${fmtInt(simRealAtiv)}</td>
                     <td class="grp-sep">${fmtInt(simTendAtiv)}</td>
-                    <td class="grp-sep ${simPctAtiv >= 70 ? 'val-green' : 'val-red'}">${fmtPct(simPctAtiv, 1)}</td>
+                    <td class="grp-sep sim-ating-col ${simPctAtiv >= 70 ? 'val-green' : 'val-red'}">${fmtPct(simPctAtiv, 1)}</td>
                     <td><b>20%</b></td>
                 </tr>
                 <tr>
-                    <td class="left grp-sep"><b>Portabilidade (Móvel)</b></td>
+                    <td class="left grp-sep sim-pilar-col">Portabilidade (Móvel)</td>
                     <td title="Base: Ativações Realizadas">${fmtInt(simRealAtiv)} Ativ.</td>
                     <td>${fmtInt(item.realPort)}</td>
-                    <td style="color:var(--evo-blue);font-weight:700;background:#F8FAFC;">+${addPort}</td>
-                    <td><b>${fmtInt(simRealPort)}</b></td>
+                    <td class="col-sim-highlight ${addPort > 0 ? 'is-active' : ''}"><span class="sim-delta-pill ${addPort > 0 ? 'active' : 'zero'}">+${addPort}</span></td>
+                    <td class="sim-realfinal-col">${fmtInt(simRealPort)}</td>
                     <td class="grp-sep">- (Portab / Ativ Real)</td>
-                    <td class="grp-sep"><span class="badge badge-cyan">${fmtPct(simPctPort, 1)}</span></td>
+                    <td class="grp-sep sim-ating-col"><span class="badge badge-cyan sim-port-badge">${fmtPct(simPctPort, 1)}</span></td>
                     <td><b>${simCalc.portDobro ? '60% (Dobro Ativado!)' : '30% (Padrão)'}</b></td>
                 </tr>
             </tbody>
@@ -12663,6 +12898,10 @@
         if (p10Unlocked) p10Unlocked.style.display = 'none';
 
         // 3. Limpar inputs, seletores de unidade e tabelas restritas do DOM exportado
+        ['#sim-add-altas', '#sim-add-ativ', '#sim-add-port'].forEach(sel => {
+            const el = cloneDoc.querySelector(sel);
+            if (el) { el.value = '0'; el.setAttribute('value', '0'); }
+        });
         if (cloneDoc.querySelector('#bi-paste-area')) cloneDoc.querySelector('#bi-paste-area').value = '';
         if (cloneDoc.querySelector('#churn-paste-area')) cloneDoc.querySelector('#churn-paste-area').value = '';
         if (cloneDoc.querySelector('#produtos-paste-area')) cloneDoc.querySelector('#produtos-paste-area').value = '';
