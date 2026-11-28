@@ -3459,6 +3459,7 @@
     let firebaseDbListenerAttached = false;
     let firebaseDbRefPath = '';
     let localDirtySinceLastSync = false;
+    let isProcessingTotalUpdate = false;
     let pendingRemoteSnapshot = null;
     let wakeupListenersBound = false;
 
@@ -3493,6 +3494,7 @@
     }
 
     function isUserActivelyEditing() {
+        if (isProcessingTotalUpdate) return true;
         const ae = document.activeElement;
         if (!ae || !ae.tagName) return false;
         const tag = ae.tagName.toUpperCase();
@@ -7925,8 +7927,9 @@
 
         // 1. Detecta se STATE.movel na nuvem foi sobrescrito sem vendedores/fornecedores (bug da v19-v11)
         const mvArr = Array.isArray(STATE.movel) ? STATE.movel : [];
+        const isNov26 = String((STATE.config && STATE.config.mesVigente) || '').toUpperCase().startsWith('NOV');
         const hasNominalMovel = mvArr.some(r => r && ((r[3] && String(r[3]).trim().length > 0) || (r[4] && String(r[4]).trim().length > 0)));
-        if (!hasNominalMovel && Array.isArray(INITIAL_MOVEL_EMBEDDED) && INITIAL_MOVEL_EMBEDDED.length > 0) {
+        if (isNov26 && mvArr.length > 0 && !hasNominalMovel && Array.isArray(INITIAL_MOVEL_EMBEDDED) && INITIAL_MOVEL_EMBEDDED.length > 0) {
             // Soma os totais atuais por (reg|unitNorm|shortCanal) vindos da nuvem para não perder vendas do dia
             const cloudTotals = {};
             const rawMetaByKey = {};
@@ -12292,16 +12295,25 @@
             const c0 = String(r[0] || '').trim();
             const c1 = String(r[1] || '').trim();
             const c2 = String(r[2] || '').trim();
-            const c4 = String(r[4] || '').trim().toUpperCase();
+            const c3 = String(r[3] || '').trim().toUpperCase();
+            let c4 = String(r[4] || '').trim().toUpperCase();
 
             // Ignora cabeçalhos e rodapé de filtros do BI
             const c0Up = c0.toUpperCase();
-            if (!c0 || c0Up.startsWith('ANO/MES') || c0Up.startsWith('COMPET') || c0Up.startsWith('FILTROS') || normName(c4) === 'TOTAL') {
+            if (!c0 || c0Up.startsWith('ANO/MES') || c0Up.startsWith('COMPET') || c0Up.startsWith('DATA') || c0Up.startsWith('FILTROS') || normName(c4) === 'TOTAL' || normName(c2) === 'TOTAL') {
                 return;
             }
+            if (c4 === 'MT' || c4 === 'MS') c4 = 'CO';
+            if (!ALL_REGIONS.includes(c4)) {
+                c4 = ALL_REGIONS.includes(c3) ? c3 : detectRegionFromUnit(c2, '');
+            }
+            const curYmSlash = (STATE.config.dtInicial || '2026-11-01').slice(0, 7).replace('-', '/');
+            const mCurSlash = c0.match(/^(\d{1,2})[/-](\d{4})$/);
+            const isCurMmYyyy = mCurSlash && (`${mCurSlash[2]}/${mCurSlash[1].padStart(2, '0')}` === curYmSlash);
+            const isCurDdMmYyyy = /^\d{1,2}[/-]\d{1,2}[/-](\d{2}|\d{4})$/.test(c0);
 
-            // Formato 1: Ano/Mes | Qtd Baixas C/Projeção | NM_UNIDADE | SG_ESTADO | Regional
-            if (/^\d{4}[-/]\d{1,2}/.test(c0) && ALL_REGIONS.includes(c4)) {
+            // Formato 1: Ano/Mes (ou data do mês vigente) | Qtd Baixas C/Projeção | NM_UNIDADE | SG_ESTADO | Regional
+            if ((/^\d{4}[-/]\d{1,2}/.test(c0) || isCurMmYyyy || isCurDdMmYyyy) && ALL_REGIONS.includes(c4)) {
                 const uKey = normChurnUnit(c2);
                 if (!uKey) return;
                 const val = parseNumVal(c1);
@@ -12548,214 +12560,271 @@
     }
 
     async function processarBDGeral() {
-        ensureChurnSkeleton();
-        ensureProdutosSkeleton();
-        ensureQuadUpdatesSkeleton();
+        if (isProcessingTotalUpdate) return;
+        isProcessingTotalUpdate = true;
+        localDirtySinceLastSync = true;
 
-        const rawBi = ((document.getElementById('bi-paste-area') && document.getElementById('bi-paste-area').value) || '').trim();
-        const rawChurn = ((document.getElementById('churn-paste-area') && document.getElementById('churn-paste-area').value) || '').trim();
-        const rawProdutos = ((document.getElementById('produtos-paste-area') && document.getElementById('produtos-paste-area').value) || '').trim();
-        const rawMovelDet = ((document.getElementById('movel-det-paste-area') && document.getElementById('movel-det-paste-area').value) || '').trim();
-        const hasAnyPaste = !!(rawBi || rawChurn || rawProdutos || rawMovelDet);
+        const fbEl = document.getElementById('import-feedback');
+        const stEl = document.getElementById('cloud-sync-status');
 
-        if (hasAnyPaste) {
-            await captureTotalUpdateRollbackPoint();
-        }
+        try {
+            ensureRegionSkeletons();
+            ensureChurnSkeleton();
+            ensureProdutosSkeleton();
+            ensureMovelPortSkeleton();
+            ensureQuadUpdatesSkeleton();
 
-        STATE.config.dtInicial = document.getElementById('cfg-dt-ini').value || STATE.config.dtInicial;
-        STATE.config.duTotal = Number(document.getElementById('cfg-du-tt').value) || STATE.config.duTotal;
+            const taBi = document.getElementById('bi-paste-area');
+            const taC  = document.getElementById('churn-paste-area');
+            const taP  = document.getElementById('produtos-paste-area');
+            const taD  = document.getElementById('movel-det-paste-area');
 
-        const stampNow = formatNowBrTimestamp();
-        STATE.config.lastUpdate = stampNow;
-        STATE.config.syncRev = (Number(STATE.config.syncRev) || 0) + 1;
+            const rawBi       = ((taBi && taBi.value) || '').trim();
+            const rawChurn    = ((taC  && taC.value)  || '').trim();
+            const rawProdutos = ((taP  && taP.value)  || '').trim();
+            const rawMovelDet = ((taD  && taD.value)  || '').trim();
+            const hasAnyPaste = !!(rawBi || rawChurn || rawProdutos || rawMovelDet);
 
-        const churnRes = rawChurn ? parseChurnPasteData(rawChurn) : { projCount: 0, histCount: 0 };
-        if (rawChurn && (churnRes.projCount > 0 || churnRes.histCount > 0)) {
-            STATE.config.quadUpdates.churn = stampNow;
-            const taC = document.getElementById('churn-paste-area');
-            if (taC) taC.value = '';
-        }
+            if (fbEl) {
+                fbEl.style.color = 'var(--evo-blue)';
+                fbEl.textContent = 'Processando dados dos quadrantes e sincronizando com a Nuvem Firebase...';
+            }
 
-        const prodRes = rawProdutos ? parseProdutosPasteData(rawProdutos) : { curCount: 0, histCount: 0, movelCount: 0 };
-        if (rawProdutos && (prodRes.curCount > 0 || prodRes.histCount > 0)) {
-            STATE.config.quadUpdates.prod = stampNow;
-            const taP = document.getElementById('produtos-paste-area');
-            if (taP) taP.value = '';
-        }
+            if (hasAnyPaste) {
+                await captureTotalUpdateRollbackPoint();
+            }
 
-        const mdetRes = rawMovelDet ? parseMovelDetPasteData(rawMovelDet) : { curCount: 0, histCount: 0 };
-        if (rawMovelDet && (mdetRes.curCount > 0 || mdetRes.histCount > 0 || (mdetRes.portCount || 0) > 0)) {
-            STATE.config.quadUpdates.dmv = stampNow;
-            const taD = document.getElementById('movel-det-paste-area');
-            if (taD) taD.value = '';
-        }
+            const dtIniEl = document.getElementById('cfg-dt-ini');
+            const duTtEl  = document.getElementById('cfg-du-tt');
+            if (dtIniEl && dtIniEl.value) STATE.config.dtInicial = dtIniEl.value;
+            if (duTtEl && Number(duTtEl.value) > 0) STATE.config.duTotal = Number(duTtEl.value);
 
-        collectMovelCatalogFromInputs();
+            const stampNow = formatNowBrTimestamp();
+            STATE.config.lastUpdate = stampNow;
+            STATE.config.syncRev = (Number(STATE.config.syncRev) || 0) + 1;
 
-        if (!rawBi) {
+            // 1. Processa 2º Quadrante: Churn (BI OP 1002)
+            const churnRes = rawChurn ? parseChurnPasteData(rawChurn) : { projCount: 0, histCount: 0 };
+            const churnOk  = !!(rawChurn && (churnRes.projCount > 0 || churnRes.histCount > 0));
+            if (churnOk) {
+                STATE.config.quadUpdates.churn = stampNow;
+            }
+
+            // 2. Processa 3º Quadrante: Produtos (BI COM 1007 -> Portfólio + Vendas/Ativações Móvel)
+            const prodRes = rawProdutos ? parseProdutosPasteData(rawProdutos) : { curCount: 0, histCount: 0, movelCount: 0 };
+            const prodOk  = !!(rawProdutos && (prodRes.curCount > 0 || prodRes.histCount > 0 || (prodRes.movelCount || 0) > 0));
+            if (prodOk) {
+                STATE.config.quadUpdates.prod = stampNow;
+            }
+
+            // 3. Processa 4º Quadrante: DMV Móvel (Portabilidades + Mix/Ticket)
+            const mdetRes = rawMovelDet ? parseMovelDetPasteData(rawMovelDet) : { curCount: 0, histCount: 0, portCount: 0 };
+            const dmvOk   = !!(rawMovelDet && (mdetRes.curCount > 0 || mdetRes.histCount > 0 || (mdetRes.portCount || 0) > 0));
+            if (dmvOk) {
+                STATE.config.quadUpdates.dmv = stampNow;
+            }
+
+            collectMovelCatalogFromInputs();
+
+            // 4. Processa 1º Quadrante: BD Geral (BI COM 1001 -> Banda Larga Fixa)
+            let newBL = [];
+            let newMV = [];
+            let blOk = false;
+
+            if (rawBi) {
+                const delim = rawBi.includes('\t') ? '\t' : (rawBi.includes(';') ? ';' : ',');
+                const parsed = Papa.parse(rawBi, { delimiter: delim, skipEmptyLines: true }).data;
+                const rawMVRows = [];
+
+                function parseExcelNum(val) {
+                    if (val === null || val === undefined) return 0;
+                    const s = String(val).replace(/R\$/g, '').replace(/\s/g, '').replace(',', '.');
+                    return Math.round(parseFloat(s)) || 0;
+                }
+
+                function formatData(str) {
+                    if (str === null || str === undefined) return null;
+                    str = String(str).replace(/^['"]+/, '').trim();
+                    if (!str) return null;
+                    let m = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+                    if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+                    m = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2}|\d{4})/);
+                    if (m) {
+                        let y = m[3];
+                        if (y.length === 2) y = "20" + y;
+                        return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+                    }
+                    if (/^\d{5}(\.\d+)?$/.test(str)) {
+                        const serial = Math.floor(Number(str));
+                        if (serial >= 40000 && serial <= 60000) {
+                            const dt = new Date(Date.UTC(1899, 11, 30) + serial * 86400000);
+                            return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(dt.getUTCDate()).padStart(2, '0')}`;
+                        }
+                    }
+                    return null;
+                }
+
+                let lockedMvStart = -1;
+                for (let r = 0; r < Math.min(parsed.length, 30); r++) {
+                    const row = parsed[r] || [];
+                    for (let c = 8; c <= row.length - 5; c++) {
+                        if (formatData(row[c]) && (row[c + 1] || '').trim()) {
+                            lockedMvStart = c;
+                            break;
+                        }
+                    }
+                    if (lockedMvStart !== -1) break;
+                }
+
+                let verticalMovelMode = false;
+                parsed.forEach(row => {
+                    if (!Array.isArray(row)) return;
+                    const firstCellNorm = normName(row[0] || '');
+                    const dtBL = formatData(row[0]);
+
+                    if (!dtBL && firstCellNorm.includes('MOVEL') && !firstCellNorm.includes('BANDA')) {
+                        verticalMovelMode = true;
+                        return;
+                    }
+
+                    if (dtBL) {
+                        if (verticalMovelMode) {
+                            rawMVRows.push({ row, start: 0, dt: dtBL });
+                        } else {
+                            let regCell = (row[3] || '').trim().toUpperCase();
+                            if (regCell === 'MT' || regCell === 'MS') regCell = 'CO';
+                            if (!ALL_REGIONS.includes(regCell)) {
+                                regCell = detectRegionFromUnit((row[2] || '').trim(), regCell || 'SP');
+                            }
+                            newBL.push([
+                                dtBL,
+                                (row[1] || '').trim(),
+                                (row[2] || '').trim(),
+                                regCell,
+                                (row[4] || '').trim().toUpperCase(),
+                                (row[5] || '').trim().toUpperCase(),
+                                parseExcelNum(row[6]),
+                                parseExcelNum(row[7])
+                            ]);
+                        }
+                    }
+
+                    let mvStart = -1;
+                    if (lockedMvStart !== -1 && formatData(row[lockedMvStart])) {
+                        mvStart = lockedMvStart;
+                    } else {
+                        for (let c = 8; c <= row.length - 5; c++) {
+                            if (formatData(row[c]) && (row[c + 1] || '').trim()) {
+                                mvStart = c;
+                                if (lockedMvStart === -1) lockedMvStart = c;
+                                break;
+                            }
+                        }
+                    }
+                    if (mvStart !== -1) {
+                        const dtMV = formatData(row[mvStart]);
+                        if (dtMV) rawMVRows.push({ row, start: mvStart, dt: dtMV });
+                    }
+                });
+
+                const hasMvRegCol = rawMVRows.some(item => {
+                    const v3 = (item.row[item.start + 3] || '').trim().toUpperCase();
+                    return ALL_REGIONS.includes(v3);
+                });
+
+                newMV = rawMVRows.map(item => {
+                    const { row, start, dt } = item;
+                    const canal = (row[start + 1] || '').trim();
+                    const uni   = (row[start + 2] || '').trim();
+                    if (hasMvRegCol) {
+                        const reg = (row[start + 3] || '').trim().toUpperCase();
+                        const vend = (row[start + 4] || '').trim().toUpperCase();
+                        const parc = (row[start + 5] || '').trim().toUpperCase();
+                        const vnd  = parseExcelNum(row[start + 6]);
+                        const ativ = parseExcelNum(row[start + 7]);
+                        return reg ? [dt, canal, uni, vend, parc, vnd, ativ, reg] : [dt, canal, uni, vend, parc, vnd, ativ];
+                    } else {
+                        const vend = (row[start + 3] || '').trim().toUpperCase();
+                        const parc = (row[start + 4] || '').trim().toUpperCase();
+                        const vnd  = parseExcelNum(row[start + 5]);
+                        const ativ = parseExcelNum(row[start + 6]);
+                        return [dt, canal, uni, vend, parc, vnd, ativ];
+                    }
+                });
+
+                if (newBL.length > 0) {
+                    STATE.bl = newBL;
+                    STATE.config.quadUpdates.bl = stampNow;
+                    blOk = true;
+                }
+                if (newMV.length > 0 && !prodOk) {
+                    STATE.movel = newMV;
+                }
+            }
+
+            // 5. Limpeza atômica SOMENTE dos quadrantes processados com sucesso
+            if (blOk && taBi)   taBi.value = '';
+            if (churnOk && taC) taC.value  = '';
+            if (prodOk && taP)  taP.value  = '';
+            if (dmvOk && taD)   taD.value  = '';
+
+            // 6. Recalcula metas dinâmicas, salva cache local, renderiza todos os painéis e publica na Nuvem aguardando confirmação real
+            normalizeLeaderCapacityState();
             syncAllAgentGoalsFromMatrix();
             saveLocalStateCache();
             renderAll();
             refreshQuadrantUpdateBadges();
-            pushCloudState(false);
-            const fbEmpty = document.getElementById('import-feedback');
-            if (fbEmpty) {
-                fbEmpty.style.color = 'var(--green)';
+
+            const cloudOk = await pushCloudState(true);
+
+            const warnings = [];
+            if (rawBi && !blOk) warnings.push('BD Geral (nenhuma data válida reconhecida — texto mantido na caixa)');
+            if (rawChurn && !churnOk) warnings.push('Churn (formato não reconhecido — texto mantido na caixa)');
+            if (rawProdutos && !prodOk) warnings.push('Produtos BI 1007 (nenhum registro do mês/histórico reconhecido — texto mantido na caixa)');
+            if (rawMovelDet && !dmvOk) warnings.push('DMV Móvel (nenhum registro reconhecido — texto mantido na caixa)');
+
+            if (fbEl) {
+                const cloudSuffix = cloudOk
+                    ? 'Publicado na Nuvem Firebase e refletido em tempo real em todos os dispositivos!'
+                    : (window.location.protocol === 'file:'
+                        ? 'Atualizado localmente! Abra pelo link HTTPS com login Google para publicar na Nuvem.'
+                        : 'Atualizado localmente, mas houve falha ao confirmar gravação na Nuvem (verifique conexão/login e clique em Sincronizar Agora).');
+
                 const parts = [];
-                if (rawChurn) parts.push(`Churn (${churnRes.projCount} proj. / ${churnRes.histCount} hist.)`);
-                if (rawProdutos) parts.push(`Produtos (${prodRes.curCount} mês / ${prodRes.histCount} hist. | Móvel: ${prodRes.movelCount || 0} reg.)`);
-                if (rawMovelDet) parts.push(`DMV Móvel (${mdetRes.curCount} mês / ${mdetRes.histCount} hist. | Portab.: ${mdetRes.portCount || 0})`);
-                fbEmpty.textContent = parts.length > 0
-                    ? `${parts.join(' | ')} atualizado(s) e publicado(s) na Nuvem preservando a BD Geral!`
-                    : 'Parâmetros, catálogo móvel, metas e portabilidades atualizados e publicados na Nuvem!';
-            }
-            return;
-        }
-        STATE.config.quadUpdates.bl = stampNow;
-
-        const delim = raw.includes('\t') ? '\t' : (raw.includes(';') ? ';' : ',');
-        const parsed = Papa.parse(raw, { delimiter: delim, skipEmptyLines: true }).data;
-        const newBL = [], rawMVRows = [];
-
-        function parseExcelNum(val) {
-            if (val === null || val === undefined) return 0;
-            const s = String(val).replace(/R\$/g, '').replace(/\s/g, '').replace(',', '.');
-            return Math.round(parseFloat(s)) || 0;
-        }
-
-        function formatData(str) {
-            if (str === null || str === undefined) return null;
-            str = String(str).replace(/^['"]+/, '').trim();
-            if (!str) return null;
-            let m = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
-            if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
-            m = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2}|\d{4})/);
-            if (m) {
-                let y = m[3];
-                if (y.length === 2) y = "20" + y;
-                return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
-            }
-            if (/^\d{5}(\.\d+)?$/.test(str)) {
-                const serial = Math.floor(Number(str));
-                if (serial >= 40000 && serial <= 60000) {
-                    const dt = new Date(Date.UTC(1899, 11, 30) + serial * 86400000);
-                    return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(dt.getUTCDate()).padStart(2, '0')}`;
+                if (blOk) {
+                    const sumBlV = newBL.reduce((s, r) => s + (Number(r[6]) || 0), 0);
+                    const sumBlA = newBL.reduce((s, r) => s + (Number(r[7]) || 0), 0);
+                    parts.push(`BD Geral BI 1001: ${newBL.length} linhas (${sumBlV} vnd / ${sumBlA} altas)`);
                 }
-            }
-            return null;
-        }
+                if (churnOk) parts.push(`Churn BI 1002: ${churnRes.projCount} proj. / ${churnRes.histCount} hist.`);
+                if (prodOk)  parts.push(`Produtos BI 1007: ${prodRes.curCount} mês / ${prodRes.histCount} hist. (Móvel: ${prodRes.movelCount || 0} reg.)`);
+                if (dmvOk)   parts.push(`DMV Móvel: ${mdetRes.curCount} mês / ${mdetRes.histCount} hist. (Portab.: ${mdetRes.portCount || 0})`);
 
-        let lockedMvStart = -1;
-        for (let r = 0; r < Math.min(parsed.length, 30); r++) {
-            const row = parsed[r] || [];
-            for (let c = 8; c <= row.length - 5; c++) {
-                if (formatData(row[c]) && (row[c + 1] || '').trim()) {
-                    lockedMvStart = c;
-                    break;
-                }
-            }
-            if (lockedMvStart !== -1) break;
-        }
-
-        let verticalMovelMode = false;
-        parsed.forEach(row => {
-            if (!Array.isArray(row)) return;
-            const firstCellNorm = normName(row[0] || '');
-            const dtBL = formatData(row[0]);
-
-            if (!dtBL && firstCellNorm.includes('MOVEL') && !firstCellNorm.includes('BANDA')) {
-                verticalMovelMode = true;
-                return;
-            }
-
-            if (dtBL) {
-                if (verticalMovelMode) {
-                    rawMVRows.push({ row, start: 0, dt: dtBL });
+                if (warnings.length > 0) {
+                    fbEl.style.color = '#B45309';
+                    fbEl.textContent = (parts.length > 0 ? parts.join(' | ') + ' | ' : '') + 'Atenção: ' + warnings.join('; ') + '. ' + cloudSuffix;
                 } else {
-                    newBL.push([
-                        dtBL,
-                        (row[1] || '').trim(),
-                        (row[2] || '').trim(),
-                        (row[3] || '').trim().toUpperCase(),
-                        (row[4] || '').trim().toUpperCase(),
-                        (row[5] || '').trim().toUpperCase(),
-                        parseExcelNum(row[6]),
-                        parseExcelNum(row[7])
-                    ]);
+                    fbEl.style.color = cloudOk ? 'var(--green)' : '#B45309';
+                    fbEl.textContent = (parts.length > 0
+                        ? `Atualização concluída (${stampNow})! ${parts.join(' | ')}. `
+                        : `Parâmetros, catálogo móvel e metas sincronizados (${stampNow}). `) + cloudSuffix;
                 }
             }
-
-            let mvStart = -1;
-            if (lockedMvStart !== -1 && formatData(row[lockedMvStart])) {
-                mvStart = lockedMvStart;
-            } else {
-                for (let c = 8; c <= row.length - 5; c++) {
-                    if (formatData(row[c]) && (row[c + 1] || '').trim()) {
-                        mvStart = c;
-                        if (lockedMvStart === -1) lockedMvStart = c;
-                        break;
-                    }
-                }
+        } catch (err) {
+            console.error('Erro em processarBDGeral:', err);
+            if (fbEl) {
+                fbEl.style.color = 'var(--red)';
+                fbEl.textContent = 'Erro ao processar atualização: ' + (err && err.message ? err.message : String(err)) + '. Os dados colados foram preservados nas caixas.';
             }
-            if (mvStart !== -1) {
-                const dtMV = formatData(row[mvStart]);
-                if (dtMV) rawMVRows.push({ row, start: mvStart, dt: dtMV });
+            if (stEl) {
+                stEl.style.color = 'var(--red)';
+                stEl.textContent = 'Erro no processamento.';
             }
-        });
-
-        const hasMvRegCol = rawMVRows.some(item => {
-            const v3 = (item.row[item.start + 3] || '').trim().toUpperCase();
-            return ALL_REGIONS.includes(v3);
-        });
-
-        const newMV = rawMVRows.map(item => {
-            const { row, start, dt } = item;
-            const canal = (row[start + 1] || '').trim();
-            const uni   = (row[start + 2] || '').trim();
-            if (hasMvRegCol) {
-                const reg = (row[start + 3] || '').trim().toUpperCase();
-                const vend = (row[start + 4] || '').trim().toUpperCase();
-                const parc = (row[start + 5] || '').trim().toUpperCase();
-                const vnd  = parseExcelNum(row[start + 6]);
-                const ativ = parseExcelNum(row[start + 7]);
-                return reg ? [dt, canal, uni, vend, parc, vnd, ativ, reg] : [dt, canal, uni, vend, parc, vnd, ativ];
-            } else {
-                const vend = (row[start + 3] || '').trim().toUpperCase();
-                const parc = (row[start + 4] || '').trim().toUpperCase();
-                const vnd  = parseExcelNum(row[start + 5]);
-                const ativ = parseExcelNum(row[start + 6]);
-                return [dt, canal, uni, vend, parc, vnd, ativ];
+        } finally {
+            isProcessingTotalUpdate = false;
+            if (pendingRemoteSnapshot && !localDirtySinceLastSync) {
+                pendingRemoteSnapshot = null;
             }
-        });
-
-        if (newBL.length > 0) {
-            STATE.bl = newBL;
-            const taBi = document.getElementById('bi-paste-area');
-            if (taBi) taBi.value = '';
-        }
-        if (newMV.length > 0 && !rawProdutos) STATE.movel = newMV;
-
-        syncAllAgentGoalsFromMatrix();
-        saveLocalStateCache();
-        renderAll();
-        refreshQuadrantUpdateBadges();
-        pushCloudState(false);
-
-        const sumBlV = newBL.reduce((s, r) => s + (Number(r[6]) || 0), 0);
-        const sumBlA = newBL.reduce((s, r) => s + (Number(r[7]) || 0), 0);
-        const sumMvV = newMV.reduce((s, r) => s + (Number(r[5]) || 0), 0);
-        const sumMvA = newMV.reduce((s, r) => s + (Number(r[6]) || 0), 0);
-
-        const fbEl = document.getElementById('import-feedback');
-        const extraLoads = [];
-        if (rawChurn) extraLoads.push(`Churn: ${churnRes.projCount}p/${churnRes.histCount}h`);
-        if (rawProdutos) extraLoads.push(`Produtos: ${prodRes.curCount}m/${prodRes.histCount}h`);
-        if (rawMovelDet) extraLoads.push(`MóvelDet: ${mdetRes.curCount}m/${mdetRes.histCount}h`);
-        const churnInfoTxt = extraLoads.length > 0 ? (' | ' + extraLoads.join(' | ')) : '';
-        if (fbEl) {
-            fbEl.style.color = 'var(--green)';
-            const mvSummary = rawProdutos ? `Móvel (BI 1007): ${STATE.movel.length} reg.` : (newMV.length > 0 ? `Móvel: ${sumMvV} vnd / ${sumMvA} ativ.` : 'Móvel via BI 1007');
-            fbEl.textContent = `Base processada com sucesso! Banda Larga (BI 1001): ${newBL.length} linhas (${sumBlV} vnd / ${sumBlA} altas) | ${mvSummary}${churnInfoTxt}. Publicado na Nuvem!`;
         }
     }
 
@@ -12984,14 +13053,15 @@
             STATE.config.cloudSyncUrl = url;
         }
         if (!url) {
-            if (manualFeedback) alert('Informe uma URL de Nuvem (Firebase / API JSON) primeiro, ou use o botão "Backup HTML".');
-            return;
+            if (manualFeedback && window.location.protocol !== 'file:') alert('Informe uma URL de Nuvem (Firebase / API JSON) primeiro, ou use o botão "Backup HTML".');
+            return false;
         }
+        const effectiveUrl = getEffectiveCloudJsonUrl() || url;
         const st = document.getElementById('cloud-sync-status');
         try {
             if (st) { st.style.color = 'var(--evo-blue)'; st.textContent = 'Sincronizando...'; }
 
-            const cleanPayload = sanitizeFirebasePayload(JSON.parse(JSON.stringify(STATE)));
+            const cleanPayload = sanitizeFirebasePayload(createCleanStateSnapshotWithoutRollback());
 
             // Prioridade 1: WebSocket nativo do Firebase Realtime Database (propagação imediata para todos os devices abertos)
             const hasDbSdk = (typeof firebase !== 'undefined' && typeof firebase.database === 'function' && window.location.protocol !== 'file:');
@@ -13001,34 +13071,35 @@
                     const dbPath = getFirebaseDbPath();
                     await firebase.database().ref(dbPath).set(cleanPayload);
                     localDirtySinceLastSync = false;
+                    pendingRemoteSnapshot = null;
                     attachRealtimeDatabaseListener();
                     if (st) {
                         st.style.color = 'var(--green)';
-                        st.textContent = 'Tempo Real sincronizado (' + (String(STATE.config.lastUpdate || '').split(' ')[1] || '') + ')!';
+                        st.textContent = 'Tempo Real sincronizado' + (IS_HOMOLOG_MODE ? ' [HOMOLOG]' : '') + ' (' + (String(STATE.config.lastUpdate || '').split(' ')[1] || '') + ')!';
                     }
-                    return;
+                    return true;
                 } catch (wsErr) {
                     console.warn('Fallback para REST PUT após erro SDK:', wsErr);
                 }
             }
 
-            let authParam = await getFirebaseAuthQueryParam(url.includes('?'), false);
+            let authParam = await getFirebaseAuthQueryParam(effectiveUrl.includes('?'), false);
             if (firebaseAuthReady && !authParam && window.location.protocol === 'file:') {
                 if (st) {
                     st.style.color = 'var(--evo-blue)';
-                    st.textContent = 'Configuração salva localmente! Suba o HTML no GitHub e entre com Google para sincronizar na nuvem.';
+                    st.textContent = 'Salvo localmente! Acesse pelo link HTTPS e entre com Google para publicar na nuvem.';
                 }
-                return;
+                return false;
             }
             const bodyJson = JSON.stringify(cleanPayload);
-            let res = await fetch(url + authParam, {
+            let res = await fetch(effectiveUrl + authParam, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: bodyJson
             });
             if ((res.status === 401 || res.status === 403) && firebaseAuthReady && firebase.auth().currentUser) {
-                authParam = await getFirebaseAuthQueryParam(url.includes('?'), true);
-                res = await fetch(url + authParam, {
+                authParam = await getFirebaseAuthQueryParam(effectiveUrl.includes('?'), true);
+                res = await fetch(effectiveUrl + authParam, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: bodyJson
@@ -13036,26 +13107,31 @@
             }
             if (res.ok) {
                 localDirtySinceLastSync = false;
+                pendingRemoteSnapshot = null;
                 if (st) {
                     st.style.color = 'var(--green)';
-                    st.textContent = 'Conectado e sincronizado (' + STATE.config.lastUpdate.split(' ')[1] + ')!';
+                    st.textContent = 'Conectado e sincronizado' + (IS_HOMOLOG_MODE ? ' [HOMOLOG]' : '') + ' (' + (String(STATE.config.lastUpdate || '').split(' ')[1] || '') + ')!';
                 }
+                return true;
             } else if (res.status === 401 || res.status === 403) {
                 if (st) {
                     st.style.color = 'var(--red)';
                     st.textContent = 'Acesso negado (Erro ' + res.status + '): faça login com sua conta Google corporativa pelo link hospedado (https://...) antes de sincronizar.';
                 }
+                return false;
             } else {
                 if (st) {
                     st.style.color = 'var(--red)';
                     st.textContent = 'Erro HTTP ' + res.status + ' ao enviar para nuvem.';
                 }
+                return false;
             }
         } catch (err) {
             if (st) {
                 st.style.color = 'var(--red)';
                 st.textContent = 'Falha de rede/CORS: verifique se a URL termina em /evo.json e se há internet.';
             }
+            return false;
         }
     }
 
@@ -13244,8 +13320,10 @@
                 }
             });
         }
+        const isNov26Remote = String((STATE.config && STATE.config.mesVigente) || '').toUpperCase().startsWith('NOV');
+        const prodNeverLoaded = isDefaultSeedStamp(STATE.config && STATE.config.quadUpdates && STATE.config.quadUpdates.prod);
         const hasMultiRegMovel = Array.isArray(STATE.movel) && STATE.movel.some(r => r[7] === 'CO' || r[7] === 'RS');
-        if (!hasMultiRegMovel && Array.isArray(INITIAL_MOVEL_EMBEDDED) && INITIAL_MOVEL_EMBEDDED.length > 0) {
+        if (isNov26Remote && prodNeverLoaded && Array.isArray(STATE.movel) && STATE.movel.length > 0 && !hasMultiRegMovel && Array.isArray(INITIAL_MOVEL_EMBEDDED) && INITIAL_MOVEL_EMBEDDED.length > 0) {
             STATE.movel = JSON.parse(JSON.stringify(INITIAL_MOVEL_EMBEDDED));
             needsCloudMigrationPush = true;
         }
@@ -13362,9 +13440,10 @@
         const cloudUrl = normalizeCloudUrl(STATE.config.cloudSyncUrl || '');
         if (cloudUrl) {
             try {
-                // Heartbeat leve: consulta primeiro apenas /config/lastUpdate.json (~30 bytes) quando não for carga inicial forçada
-                if (!forceFull && /\.json$/i.test(cloudUrl)) {
-                    const metaUrl = cloudUrl.replace(/\.json$/i, '/config.json');
+                const targetJsonUrl = getEffectiveCloudJsonUrl() || cloudUrl;
+                // Heartbeat leve: consulta primeiro apenas /config.json (~120 bytes) quando não for carga inicial forçada
+                if (!forceFull && /\.json$/i.test(targetJsonUrl)) {
+                    const metaUrl = targetJsonUrl.replace(/\.json$/i, '/config.json');
                     let authMeta = await getFirebaseAuthQueryParam(true, false);
                     let metaRes = await fetch(metaUrl + '?t=' + Date.now() + authMeta, { cache: 'no-store' });
                     if ((metaRes.status === 401 || metaRes.status === 403) && firebaseAuthReady && firebase.auth().currentUser) {
@@ -13382,12 +13461,11 @@
                     }
                 }
 
-                const targetJsonUrl = getEffectiveCloudJsonUrl();
                 let authParam = await getFirebaseAuthQueryParam(targetJsonUrl.includes('?'), false);
                 let res = await fetch(targetJsonUrl + (targetJsonUrl.includes('?') ? '&' : '?') + 't=' + Date.now() + authParam, { cache: 'no-store' });
                 if ((res.status === 401 || res.status === 403) && firebaseAuthReady && firebase.auth().currentUser) {
                     authParam = await getFirebaseAuthQueryParam(true, true);
-                    res = await fetch(cloudUrl + (cloudUrl.includes('?') ? '&' : '?') + 't=' + Date.now() + authParam, { cache: 'no-store' });
+                    res = await fetch(targetJsonUrl + (targetJsonUrl.includes('?') ? '&' : '?') + 't=' + Date.now() + authParam, { cache: 'no-store' });
                 }
                 if (res.ok) {
                     const remote = await res.json();
@@ -13418,12 +13496,15 @@
     }
 
 
-    function virarMesAutomatico() {
+    async function virarMesAutomatico() {
         if (!checkAdminPass()) return;
         const curMesNome = (STATE.config.mesVigente || 'Novembro/26').split('/')[0].slice(0, 3);
         const novoMesVigente = prompt("Informe o nome do NOVO mês que está iniciando (ex: Dezembro/26):", "Dezembro/26");
         if (!novoMesVigente) return;
         const novoDuTotal = Number(prompt("Informe a quantidade de Dias Úteis (DU Total) do novo mês:", "22")) || 22;
+        isProcessingTotalUpdate = true;
+        localDirtySinceLastSync = true;
+        await captureTotalUpdateRollbackPoint();
 
         // Append current month realized into historical series for all regionals (CO, RJ, RS, SP)
         ensureRegionSkeletons();
@@ -13710,14 +13791,36 @@
             STATE.movelPort.lastUpdate = `Virada ${novoMesVigente}`;
         }
 
+        STATE.bl = [];
+        STATE.movel = [];
+        if (STATE.movelPort && STATE.movelPort.bySeller) {
+            ALL_REGIONS.forEach(rg => {
+                const mapRg = STATE.movelPort.bySeller[rg] || {};
+                Object.keys(mapRg).forEach(sk => {
+                    if (!Array.isArray(mapRg[sk].hist)) mapRg[sk].hist = [];
+                    mapRg[sk].hist.push(Number(mapRg[sk].total) || 0);
+                    mapRg[sk].total = 0;
+                    mapRg[sk].byCh = {};
+                });
+            });
+        }
         showHistCanais = false;
         showHistMovel = false;
         syncAllAgentGoalsFromMatrix();
         stampLastUpdate();
+        if (STATE.config && STATE.config.quadUpdates) {
+            const virLbl = `Virada ${novoMesVigente} (${STATE.config.lastUpdate})`;
+            STATE.config.quadUpdates = { bl: virLbl, churn: virLbl, prod: virLbl, dmv: virLbl };
+        }
         saveLocalStateCache();
         renderAll();
-        pushCloudState(false);
-        document.getElementById('import-feedback').textContent = `Virada para ${novoMesVigente} concluída! O mês ${curMesNome} agora é o novo M-1. Cole a nova BD Geral do mês vigente e clique em "Processar & Publicar na Nuvem".`;
+        refreshQuadrantUpdateBadges();
+        try {
+            await pushCloudState(true);
+        } finally {
+            isProcessingTotalUpdate = false;
+        }
+        document.getElementById('import-feedback').textContent = `Virada para ${novoMesVigente} concluída e publicada na Nuvem! O mês ${curMesNome} agora é o novo M-1. Cole as novas bases do mês vigente e clique em "Processar & Publicar na Nuvem".`;
     }
 
     function safeRenderFn(fn) {
