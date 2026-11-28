@@ -1900,198 +1900,83 @@
 
 
         /* ==========================================================================
-           ARQUITETURA STICKY SUBBARS & ONE-PAGE ADAPTATIVO (NOTEBOOK / PC / TV / MOBILE)
+           ARQUITETURA STICKY SUBBARS, HEADER 2 LINHAS & GRÁFICOS AMPLOS (SEM ACHATAR)
            ========================================================================== */
         :root {
-            --hdr-h: 52px;
+            --hdr-h: 64px;
             --subbar-h: 0px;
-            --avail-panel-h: calc(100dvh - 64px);
         }
 
-        /* 1. BARRAS SELETORAS CONGELADAS (STICKY) EM TODAS AS ABAS */
+        /* 1. OTIMIZAÇÃO DO HEADER EM TELAS DE NOTEBOOK/PC (961px..1840px):
+              2 linhas limpas e equilibradas em vez de 3 linhas! */
+        @media (min-width: 961px) and (max-width: 1840px) {
+            header {
+                padding: 0.42rem 1.15rem 0.44rem !important;
+                gap: 0.36rem 0.75rem !important;
+            }
+            header > .brand-left { order: 1; }
+            header > .meta-status { order: 2; margin-left: auto; }
+            header > .nav-tabs {
+                order: 3;
+                width: 100%;
+                border-top: 1px solid rgba(255, 255, 255, 0.14);
+                padding-top: 0.34rem;
+                padding-bottom: 0;
+            }
+        }
+
+        /* 2. BARRAS SELETORAS CONGELADAS (STICKY) EM TODAS AS ABAS AO ROLAR A PÁGINA */
         .sticky-subbar {
             position: sticky !important;
-            top: calc(var(--hdr-h, 52px) + 2px) !important;
+            top: calc(var(--hdr-h, 64px) + 4px) !important;
             z-index: 46 !important;
             overflow: visible !important;
             box-shadow: 0 4px 12px rgba(1, 26, 70, 0.09) !important;
             backdrop-filter: blur(8px);
-            flex-shrink: 0;
         }
-        /* Garante que menus suspensos de unidades (Unidades e Móvel) abram livremente sobre KPIs e Gráficos */
         .p5-unit-combo-wrap, .unit-combo-wrap { position: relative; z-index: 65; }
         .p5-unit-combo-menu, .unit-combo-menu { z-index: 150 !important; }
 
-        /* 2. CABEÇALHO CONGELADO NAS MATRIZES EXECUTIVAS QUANDO HOUVER ROLAGEM INTERNA */
+        /* 3. CABEÇALHOS CONGELADOS NAS TABELAS E MATRIZES EXECUTIVAS */
         table.tbl-exec-matrix thead th {
             position: sticky;
             top: 0;
             z-index: 9;
         }
+        #p2 table.tbl-diario thead th {
+            position: sticky;
+            top: 0;
+            z-index: 8;
+        }
 
-        /* 3. GRÁFICOS ELÁSTICOS ADAPTATIVOS AO DISPOSITIVO */
+        /* 4. ALTURA AMPLA E PROTEGIDA PARA TODOS OS GRÁFICOS (NUNCA ACHATADOS!) */
         .chart-canvas-wrap {
             position: relative;
             width: 100%;
-            height: clamp(160px, 21.2dvh, 226px);
-            min-height: 128px;
+            height: clamp(238px, 27.5dvh, 305px) !important;
+            min-height: 238px !important;
         }
 
-        /* 4. VISÃO ONE-PAGE AUTOMÁTICA EM DESKTOP, NOTEBOOKS & TVs (LARGURA >= 961px E ALTURA >= 620px) */
-        @media (min-width: 961px) and (min-height: 620px) {
+        @media (min-width: 961px) {
             main {
-                padding: 0.38rem 1.15rem 0.42rem !important;
+                padding: 0.55rem 1.2rem 1.25rem !important;
             }
-            /* Painéis Executivos e Tabulares One-Page (#p1..#p9 e #p12) */
-            #p1.panel.active,
-            #p2.panel.active,
-            #p3.panel.active,
-            #p4.panel.active,
-            #p5.panel.active,
-            #p6.panel.active,
-            #p7.panel.active,
-            #p8.panel.active,
-            #p9.panel.active,
-            #p12.panel.active {
-                height: calc(100dvh - var(--hdr-h, 52px) - 0.84rem);
-                gap: 0.38rem !important;
-            }
-
-            #p3-exec-wrap,
-            #p5-exec-wrap {
-                flex: 1 1 0%;
-                min-height: 0;
-                gap: 0.38rem !important;
-            }
-
-            .kpi-grid,
-            .prod-podium-grid,
-            .podium-grid,
-            .charts-duo-grid,
-            .rules-strip,
-            #p12-top-Showcase {
-                flex-shrink: 0;
-            }
-
-            /* Card da Matriz Executiva ou Tabela Principal ajusta-se exatamente ao conteúdo e encolhe c/ scroll interno se exceder a tela */
-            .exec-matrix-card,
-            .one-page-fill-card {
-                flex: 0 1 auto !important;
-                min-height: 125px !important;
-                overflow: hidden !important;
-                display: flex !important;
-                flex-direction: column !important;
-            }
-            .exec-matrix-card > .table-wrap,
-            .one-page-fill-card > .table-wrap,
-            .one-page-fill-card > .rk-scroll-wrap {
-                flex: 1 1 auto !important;
-                min-height: 0 !important;
-                max-height: 100% !important;
-                overflow: auto !important;
-            }
-            .one-page-table-host {
-                flex: 1 1 auto !important;
-                min-height: 0 !important;
-                display: flex !important;
-                flex-direction: column !important;
-                overflow: hidden !important;
-            }
-            .one-page-table-host > .units-scroll-wrap {
-                flex: 0 1 auto !important;
-                min-height: 0 !important;
-                max-height: 100% !important;
-                overflow: auto !important;
-            }
-
-            /* Aba 2 (Diário): divide as duas tabelas diárias de forma equilibrada na tela One-Page */
-            #p2.panel.active > .card-box {
-                flex: 0 1 50%;
-                min-height: 0;
-                overflow: hidden;
-            }
-            #p2.panel.active > .card-box > .table-wrap {
-                flex: 1 1 auto;
-                min-height: 0;
-                overflow: auto;
-            }
-            #p2 table.tbl-diario thead th {
-                position: sticky;
-                top: 0;
-                z-index: 8;
+            #p3-exec-wrap, #p5-exec-wrap {
+                gap: 0.52rem;
             }
         }
 
-        /* 5. CALIBRAGEM FINA PARA TELAS DE NOTEBOOK (ALTURA ÚTIL <= 820px, ex: 1366x768 ou 1080p a 125%/150%) */
-        @media (min-width: 961px) and (max-height: 820px) {
-            header {
-                padding: 0.32rem 1.0rem !important;
-                gap: 0.42rem !important;
-            }
-            .evo-brand-mark svg.evo-logo-dark { height: 25px !important; }
-            .brand-title { font-size: 0.86rem !important; }
-            .tab-btn { padding: 3px 8px !important; font-size: 0.69rem !important; }
-            .reg-btn { padding: 3px 8px !important; font-size: 0.70rem !important; }
-            .update-badge { padding: 2px 7px !important; font-size: 0.62rem !important; }
-            .du-pill { padding: 3px 8px !important; font-size: 0.68rem !important; }
-
-            .sticky-subbar { padding: 0.24rem 0.58rem !important; }
-            #p12-group-bar .pill-btn,
-            #p5-subview-bar .pill-btn,
-            #p4-channel-bar .pill-btn {
-                padding: 3px 9px !important;
-                font-size: 0.67rem !important;
-            }
-
-            .kpi-grid { gap: 0.42rem !important; }
-            .kpi-card, #p1 .kpi-card, #p3-exec-wrap .kpi-card, #p12 .kpi-card, #p5 .kpi-card {
-                padding: 0.28rem 0.58rem !important;
-                gap: 1px !important;
-            }
-            .kpi-label { font-size: 0.60rem !important; }
-            .kpi-value, #p1 .kpi-value, #p3-exec-wrap .kpi-value, #p12 .kpi-value {
-                font-size: 1.06rem !important;
-                margin-top: 0 !important;
-            }
-            .kpi-sub { font-size: 0.58rem !important; margin-top: 0 !important; }
-            .kpi-badges-stack { gap: 2px !important; width: 92px !important; }
-            .kpi-badges-stack .badge { font-size: 0.57rem !important; padding: 1px 4px !important; }
-
-            .prod-podium-card, .podium-card { padding: 0.34rem 0.62rem !important; }
-            .prod-podium-name, .podium-name { font-size: 0.82rem !important; }
-            .prod-podium-sub, .podium-stats { font-size: 0.65rem !important; }
-            .prod-rank-badge, .rank-medal { width: 27px !important; height: 27px !important; font-size: 0.74rem !important; }
-
-            .chart-canvas-wrap {
-                height: clamp(114px, 17.5dvh, 156px) !important;
-                min-height: 110px !important;
-            }
-            .card-box, #p1 .card-box, #p3-exec-wrap .card-box, #p12 .card-box, #p5 .card-box {
-                padding: 0.32rem 0.56rem !important;
-                gap: 0.22rem !important;
-            }
-            .box-title, #p1 .box-title, #p3-exec-wrap .box-title, #p12 .box-title, #p5 .box-title {
-                font-size: 0.74rem !important;
-            }
-
-            table.tbl-exec-matrix { font-size: 0.62rem !important; }
-            table.tbl-exec-matrix thead th { padding: 0.19rem 0.16rem !important; font-size: 0.58rem !important; }
-            table.tbl-exec-matrix td { padding: 0.14rem 0.16rem !important; }
-            table.tbl-exec-matrix tr.row-macro td { padding-top: 0.13rem !important; padding-bottom: 0.13rem !important; }
-            table.tbl-exec-matrix .macro-vol { font-size: 0.63rem !important; }
-            table.tbl-exec-matrix .macro-share { font-size: 0.53rem !important; }
-        }
-
-        /* 6. ESCALA AUTOMÁTICA PARA TVs / WAR ROOM / MONITORES ULTRA-WIDE (>= 2150px) */
+        /* 5. ESCALA AUTOMÁTICA PARA TVs / WAR ROOM / MONITORES ULTRA-WIDE (>= 2150px) */
         @media (min-width: 2150px) {
             html { font-size: clamp(16px, 0.88vw, 22px); }
             main { max-width: 96vw !important; }
             .chart-canvas-wrap {
-                height: clamp(230px, 24dvh, 360px) !important;
+                height: clamp(290px, 29dvh, 390px) !important;
+                min-height: 290px !important;
             }
         }
 
-        /* 7. RESPONSIVIDADE INTELIGENTE PARA SMARTPHONES E TABLETS (<= 960px) */
+        /* 6. RESPONSIVIDADE FLUIDA PARA SMARTPHONES E TABLETS (<= 960px) */
         @media (max-width: 960px) {
             header {
                 padding: 0.42rem 0.65rem !important;
@@ -2106,7 +1991,6 @@
             .brand-divider { display: none; }
             .brand-title { font-size: 0.84rem !important; }
 
-            /* Abas principais deslizáveis horizontalmente ao toque (evita empilhar várias linhas no celular) */
             .nav-tabs {
                 width: 100%;
                 flex-wrap: nowrap !important;
@@ -2129,7 +2013,6 @@
 
             main { padding: 0.48rem 0.55rem 1.5rem !important; }
 
-            /* Subbars permanecem congeladas logo abaixo do header no smartphone com deslize horizontal suave nos botões */
             .sticky-subbar {
                 top: calc(var(--hdr-h, 96px) + 2px) !important;
                 padding: 0.34rem 0.52rem !important;
@@ -2150,8 +2033,8 @@
                 gap: 0.45rem !important;
             }
             .chart-canvas-wrap {
-                height: 195px !important;
-                min-height: 175px !important;
+                height: 240px !important;
+                min-height: 230px !important;
             }
             .units-scroll-wrap, .rk-scroll-wrap {
                 max-height: 68dvh !important;
@@ -4313,7 +4196,7 @@
     const metaTickPlugin = {
         id: 'metaTickPlugin',
         afterDatasetsDraw(chart) {
-            if (!chart.canvas.id.startsWith('chartConsolidado') && !chart.canvas.id.startsWith('chartUnidade')) return;
+            if (!chart.canvas.id.startsWith('chartConsolidado') && !chart.canvas.id.startsWith('chartUnidade') && !chart.canvas.id.startsWith('chartMovel')) return;
             const metaDatasetIndex = chart.data.datasets.findIndex(d => d.isMetaTick);
             if (metaDatasetIndex === -1) return;
             const metaMeta = chart.getDatasetMeta(metaDatasetIndex);
@@ -5251,6 +5134,7 @@
         const exactMetaArr = metricKey === 'altas' ? hist.metasAltasHist : hist.metasVendasHist;
 
         const labelsHist = [...hist.meses, 'Mês Atual'];
+        const lastIdx = labelsHist.length - 1;
         const totalsHistRaw = hist.meses.map((_, i) => {
             if (Array.isArray(exactRealArr) && exactRealArr[i] !== undefined && exactRealArr[i] !== null) {
                 return Number(exactRealArr[i]);
@@ -5283,17 +5167,18 @@
         const medMeta = posMetas.length ? posMetas[Math.floor(posMetas.length / 2)] : maxBarVal;
         const normalMetas = posMetas.filter(v => v <= medMeta * 1.35);
         const refMetaVal = normalMetas.length ? Math.max(...normalMetas) : maxBarVal;
-        const smartYMax = Math.max(1, +(Math.max(maxBarVal * 1.24, refMetaVal * 1.16)).toFixed(2));
+        const curTopVal = Math.max(projAtual, fcAtual <= medMeta * 1.35 ? fcAtual : 0);
+        const smartYMax = Math.max(1, +(Math.max(maxBarVal * 1.24, refMetaVal * 1.20, curTopVal * 1.26)).toFixed(2));
         const outlierCeiling = smartYMax * 0.93;
 
         const nCols = labelsHist.length;
-        const scaleFactor = nCols <= 11 ? 1 : Math.max(0.76, 11 / nCols);
-        const barPct = nCols <= 12 ? 0.84 : Math.max(0.72, 10.2 / nCols);
-        const catPct = 0.90;
-        const barFontSize = +(9.5 * scaleFactor).toFixed(1);
-        const fcFontSize = +(8.5 * scaleFactor).toFixed(1);
-        const projFontSize = +(9.5 * scaleFactor).toFixed(1);
-        const tickFontSize = +(10.0 * scaleFactor).toFixed(1);
+        const scaleFactor = nCols <= 11 ? 1 : Math.max(0.78, 11 / nCols);
+        const barPct = nCols <= 12 ? 0.80 : Math.max(0.70, 10.0 / nCols);
+        const catPct = 0.88;
+        const barFontSize = +(9.1 * scaleFactor).toFixed(1);
+        const fcFontSize = +(8.3 * scaleFactor).toFixed(1);
+        const projFontSize = +(8.8 * scaleFactor).toFixed(1);
+        const tickFontSize = +(9.8 * scaleFactor).toFixed(1);
 
         const hasHistMetaAt = (idx) => idx < totalsHist.length && metasHist[idx] > 0;
         const isHistBelowMeta = (idx) => {
@@ -5301,15 +5186,27 @@
             return totalsHist[idx] < metasHist[idx];
         };
 
+        // Helpers geométricos anti-sobreposição em coordenadas reais de pixel
+        function getBarHeightPx(chart, val) {
+            const yScale = chart && chart.scales && chart.scales.y;
+            if (!yScale || !val || val <= 0) return 0;
+            return Math.max(0, yScale.getPixelForValue(0) - yScale.getPixelForValue(val));
+        }
+
+        function getEffectiveMetaPixelY(yScale, rawMetaVal) {
+            const clampedVal = Math.min(rawMetaVal, outlierCeiling);
+            return yScale.getPixelForValue(clampedVal);
+        }
+
         const canvasEl = document.getElementById(canvasId);
         if (!canvasEl) return null;
         const ctx2d = canvasEl.getContext('2d');
 
-        const gradHist = ctx2d.createLinearGradient(0, 0, 0, 205);
+        const gradHist = ctx2d.createLinearGradient(0, 0, 0, 290);
         gradHist.addColorStop(0, '#2B7AE4');
         gradHist.addColorStop(1, '#0F3D82');
 
-        const gradAtual = ctx2d.createLinearGradient(0, 0, 0, 205);
+        const gradAtual = ctx2d.createLinearGradient(0, 0, 0, 290);
         gradAtual.addColorStop(0, '#0052CC');
         gradAtual.addColorStop(1, '#001B5E');
 
@@ -5322,24 +5219,48 @@
                         type: 'bar',
                         label: isPerDu ? 'Realizado / DU' : 'Realizado',
                         data: [...totalsHist, realAtual],
-                        backgroundColor: (ctx) => ctx.dataIndex === labelsHist.length - 1 ? gradAtual : gradHist,
+                        backgroundColor: (ctx) => ctx.dataIndex === lastIdx ? gradAtual : gradHist,
                         borderRadius: 4,
                         barPercentage: barPct,
                         categoryPercentage: catPct,
                         stack: 'stack0',
                         datalabels: {
-                            display: true,
-                            anchor: 'start',
+                            clip: false,
+                            display: (ctx) => Number(ctx.dataset.data[ctx.dataIndex]) > 0,
+                            // Se a barra tiver >= 24px de altura, ancora na base interna; se for barra muito curta (<24px), ancora no topo externo
+                            anchor: (ctx) => {
+                                const v = Number(ctx.dataset.data[ctx.dataIndex]) || 0;
+                                const hPx = getBarHeightPx(ctx.chart, v);
+                                if (ctx.dataIndex === lastIdx) return hPx >= 18 ? 'start' : 'end';
+                                return hPx >= 24 ? 'start' : 'end';
+                            },
                             align: 'top',
-                            offset: 6,
-                            color: (ctx) => (ctx.dataIndex === labelsHist.length - 1) ? '#FFFFFF' : (!hasHistMetaAt(ctx.dataIndex) ? '#0F172A' : (isHistBelowMeta(ctx.dataIndex) ? '#991B1B' : '#166534')),
-                            backgroundColor: (ctx) => (ctx.dataIndex === labelsHist.length - 1) ? 'transparent' : (!hasHistMetaAt(ctx.dataIndex) ? '#F1F5F9' : (isHistBelowMeta(ctx.dataIndex) ? '#FEE2E2' : '#DCFCE7')),
-                            borderColor: (ctx) => (ctx.dataIndex === labelsHist.length - 1) ? 'transparent' : (!hasHistMetaAt(ctx.dataIndex) ? '#CBD5E1' : (isHistBelowMeta(ctx.dataIndex) ? '#FCA5A5' : '#86EFAC')),
-                            borderWidth: (ctx) => (ctx.dataIndex === labelsHist.length - 1) ? 0 : 1,
+                            offset: (ctx) => {
+                                const v = Number(ctx.dataset.data[ctx.dataIndex]) || 0;
+                                const hPx = getBarHeightPx(ctx.chart, v);
+                                if (ctx.dataIndex === lastIdx) return hPx >= 18 ? 5 : 2;
+                                return hPx >= 24 ? 5 : 3;
+                            },
+                            color: (ctx) => {
+                                if (ctx.dataIndex === lastIdx) {
+                                    const hPx = getBarHeightPx(ctx.chart, realAtual);
+                                    return hPx >= 18 ? '#FFFFFF' : '#001B5E';
+                                }
+                                return !hasHistMetaAt(ctx.dataIndex) ? '#0F172A' : (isHistBelowMeta(ctx.dataIndex) ? '#991B1B' : '#166534');
+                            },
+                            backgroundColor: (ctx) => {
+                                if (ctx.dataIndex === lastIdx) {
+                                    const hPx = getBarHeightPx(ctx.chart, realAtual);
+                                    return hPx >= 18 ? 'transparent' : 'rgba(255,255,255,0.92)';
+                                }
+                                return !hasHistMetaAt(ctx.dataIndex) ? '#F1F5F9' : (isHistBelowMeta(ctx.dataIndex) ? '#FEE2E2' : '#DCFCE7');
+                            },
+                            borderColor: (ctx) => (ctx.dataIndex === lastIdx) ? 'transparent' : (!hasHistMetaAt(ctx.dataIndex) ? '#CBD5E1' : (isHistBelowMeta(ctx.dataIndex) ? '#FCA5A5' : '#86EFAC')),
+                            borderWidth: (ctx) => (ctx.dataIndex === lastIdx) ? 0 : 1,
                             borderRadius: 3,
-                            padding: (ctx) => (ctx.dataIndex === labelsHist.length - 1) ? 0 : { top: 1, bottom: 1, left: 2.5, right: 2.5 },
-                            textShadowColor: (ctx) => (ctx.dataIndex === labelsHist.length - 1) ? 'rgba(0, 14, 48, 0.75)' : 'transparent',
-                            textShadowBlur: (ctx) => (ctx.dataIndex === labelsHist.length - 1) ? 3 : 0,
+                            padding: (ctx) => (ctx.dataIndex === lastIdx) ? 0 : { top: 1, bottom: 1, left: 2.5, right: 2.5 },
+                            textShadowColor: (ctx) => (ctx.dataIndex === lastIdx && getBarHeightPx(ctx.chart, realAtual) >= 18) ? 'rgba(0, 14, 48, 0.75)' : 'transparent',
+                            textShadowBlur: (ctx) => (ctx.dataIndex === lastIdx && getBarHeightPx(ctx.chart, realAtual) >= 18) ? 3 : 0,
                             font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", size: barFontSize, weight: '700' },
                             formatter: v => v > 0 ? fmtMetricVal(v, isPerDu) : ''
                         }
@@ -5348,7 +5269,7 @@
                         type: 'bar',
                         label: isPerDu ? 'Projeção / DU' : 'Projeção',
                         data: [...Array(totalsHist.length).fill(0), deltaProj],
-                        backgroundColor: 'rgba(0, 168, 232, 0.35)',
+                        backgroundColor: 'rgba(0, 168, 232, 0.36)',
                         borderColor: '#00A8E8',
                         borderWidth: { top: 1.5, left: 1, right: 1, bottom: 0 },
                         borderRadius: { topLeft: 4, topRight: 4 },
@@ -5356,23 +5277,33 @@
                         categoryPercentage: catPct,
                         stack: 'stack0',
                         datalabels: {
-                            display: (ctx) => ctx.dataIndex === labelsHist.length - 1,
+                            clip: false,
+                            display: (ctx) => ctx.dataIndex === lastIdx && projAtual > 0,
                             anchor: 'end',
                             align: 'top',
                             offset: (ctx) => {
-                                const yScale = ctx.chart.scales.y;
-                                if (!yScale) return 7;
-                                const yBar = yScale.getPixelForValue(projAtual);
-                                const yMeta = yScale.getPixelForValue(fcAtual);
-                                const extra = Math.max(0, yBar - yMeta);
-                                return extra + 7;
+                                const yScale = ctx.chart && ctx.chart.scales && ctx.chart.scales.y;
+                                if (!yScale) return 6;
+                                const yZero = yScale.getPixelForValue(0);
+                                const yReal = yScale.getPixelForValue(realAtual);
+                                const yProj = yScale.getPixelForValue(projAtual);
+                                // Reserva espaço caso realAtual seja minúsculo e seu rótulo tenha subido acima da barra
+                                const safeCeilFromReal = (realAtual > 0 && (yZero - yReal) < 18) ? (yReal - 18) : yProj;
+                                if (fcAtual <= 0) {
+                                    return Math.max(5, (yProj - safeCeilFromReal) + 5);
+                                }
+                                const yFC = getEffectiveMetaPixelY(yScale, fcAtual);
+                                const yTopCur = Math.min(yProj, yFC, safeCeilFromReal);
+                                // Se Projeção > FC, Proj fica no andar superior (+26px acima de yTopCur); caso contrário, no andar inferior (+5px acima de yTopCur)
+                                const tierGap = (projAtual > fcAtual) ? 26 : 5;
+                                return Math.max(5, (yProj - yTopCur) + tierGap);
                             },
                             color: projChartColor,
                             backgroundColor: '#FFFFFF',
                             borderColor: projChartColor,
                             borderWidth: 1,
                             borderRadius: 3,
-                            padding: { top: 1, bottom: 1, left: 4, right: 4 },
+                            padding: { top: 1, bottom: 1, left: 3.5, right: 3.5 },
                             font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", size: projFontSize, weight: '800' },
                             formatter: () => 'Proj: ' + fmtMetricVal(projAtual, isPerDu)
                         }
@@ -5388,38 +5319,52 @@
                         borderColor: '#334155',
                         backgroundColor: '#334155',
                         datalabels: {
+                            clip: false,
                             display: (ctx) => {
                                 const v = ctx.dataset.data[ctx.dataIndex];
                                 return v != null && v > 0;
                             },
                             anchor: 'center',
-                            align: (ctx) => {
-                                const idx = ctx.dataIndex;
-                                if (idx === labelsHist.length - 1) return 'bottom';
-                                const barTop = totalsHist[idx];
-                                const metaVal = metasHist[idx];
-                                if (metaVal > outlierCeiling) return 'bottom';
-                                return metaVal >= barTop ? 'top' : 'bottom';
-                            },
+                            // SEMPRE 'top' (acima do topo da coluna/traço) — elimina 100% qualquer colisão com o Realizado dentro da barra!
+                            align: 'top',
                             offset: (ctx) => {
                                 const idx = ctx.dataIndex;
-                                const metaVal = metasHist[idx];
-                                if (metaVal > outlierCeiling && ctx.chart && ctx.chart.scales && ctx.chart.scales.y) {
-                                    const yScale = ctx.chart.scales.y;
-                                    const diffPx = Math.max(0, yScale.getPixelForValue(outlierCeiling) - yScale.getPixelForValue(metaVal));
-                                    return diffPx + 5;
+                                const metaVal = Number(metasHist[idx]) || 0;
+                                const yScale = ctx.chart && ctx.chart.scales && ctx.chart.scales.y;
+                                if (!yScale) return 6;
+                                const yRawMeta = yScale.getPixelForValue(metaVal);
+                                const yEffMeta = getEffectiveMetaPixelY(yScale, metaVal);
+
+                                if (idx === lastIdx) {
+                                    const yZero = yScale.getPixelForValue(0);
+                                    const yReal = yScale.getPixelForValue(realAtual);
+                                    const yProj = yScale.getPixelForValue(projAtual);
+                                    const safeCeilFromReal = (realAtual > 0 && (yZero - yReal) < 18) ? (yReal - 18) : yProj;
+                                    const yTopCur = Math.min(yProj, yEffMeta, safeCeilFromReal);
+                                    // Se FC >= Projeção, FC fica no andar superior (+26px acima de yTopCur); se Proj > FC, FC fica no andar inferior (+5px acima de yTopCur)
+                                    const tierGap = (projAtual > 0 && metaVal >= projAtual) ? 26 : (projAtual > 0 ? 5 : 6);
+                                    return (yRawMeta - yTopCur) + tierGap;
                                 }
-                                return 4;
+
+                                // Colunas históricas (Jan..Out): posiciona sempre 6px acima do ponto mais alto entre barra Realizado e traço Meta
+                                const barVal = Number(totalsHist[idx]) || 0;
+                                const yBar = yScale.getPixelForValue(barVal);
+                                const yZero = yScale.getPixelForValue(0);
+                                // Se a barra for muito baixa (<24px), o rótulo Realizado sobe para cima da barra; empurra Meta +20px acima dele
+                                const barH = Math.max(0, yZero - yBar);
+                                const ySafeBarTop = (barVal > 0 && barH < 24) ? (yBar - 21) : yBar;
+                                const yTopHist = Math.min(ySafeBarTop, yEffMeta);
+                                return (yRawMeta - yTopHist) + 6;
                             },
                             color: (ctx) => (metasHist[ctx.dataIndex] > outlierCeiling ? '#92400E' : '#1E293B'),
-                            backgroundColor: (ctx) => (metasHist[ctx.dataIndex] > outlierCeiling ? '#FEF3C7' : 'rgba(241, 245, 249, 0.94)'),
+                            backgroundColor: (ctx) => (metasHist[ctx.dataIndex] > outlierCeiling ? '#FEF3C7' : 'rgba(241, 245, 249, 0.96)'),
                             borderColor: (ctx) => (metasHist[ctx.dataIndex] > outlierCeiling ? '#F59E0B' : '#94A3B8'),
                             borderWidth: 1,
                             borderRadius: 3,
                             padding: { top: 1, bottom: 1, left: 2.5, right: 2.5 },
                             font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", size: fcFontSize, weight: '700' },
                             formatter: (v, ctx) => {
-                                if (ctx.dataIndex === labelsHist.length - 1) return (extraCtx.metaPrefix || 'FC: ') + fmtMetricVal(v, isPerDu);
+                                if (ctx.dataIndex === lastIdx) return (extraCtx.metaPrefix || 'FC: ') + fmtMetricVal(v, isPerDu);
                                 return (v > outlierCeiling ? '▲ ' : '') + fmtMetricVal(v, isPerDu);
                             }
                         }
@@ -5430,7 +5375,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 devicePixelRatio: Math.max(window.devicePixelRatio || 1, 2),
-                layout: { padding: { top: 30, right: 6, left: 4 } },
+                layout: { padding: { top: 48, right: 16, left: 6, bottom: 2 } },
                 plugins: {
                     legend: {
                         position: 'bottom',
@@ -5440,7 +5385,7 @@
                             boxHeight: 11,
                             padding: 10,
                             color: '#0F172A',
-                            font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", size: 11, weight: '600' }
+                            font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", size: 10.8, weight: '600' }
                         }
                     },
                     tooltip: {
@@ -5486,8 +5431,28 @@
         });
         const churnAtualDisp = isPerDu ? +(churnProjAtual / curDivisor).toFixed(2) : Math.round(churnProjAtual);
 
-        const maxAltChurn = Math.max(...altasHistDisp, altasAtualDisp, ...churnHistDisp, churnAtualDisp, 1);
-        const yMax1 = +(maxAltChurn * 1.24).toFixed(2);
+        const altasSeries = [...altasHistDisp, altasAtualDisp];
+        const churnSeries = [...churnHistDisp, churnAtualDisp];
+        const maxAltChurn = Math.max(...altasSeries, ...churnSeries, 1);
+        const yMax1 = +(maxAltChurn * 1.30).toFixed(2);
+
+        // Escalonamento inteligente quando duas barras lado a lado têm alturas muito próximas
+        function getSideBySideOffset(ctx, isAltasBar) {
+            const yScale = ctx.chart && ctx.chart.scales && ctx.chart.scales.y;
+            if (!yScale) return 3;
+            const idx = ctx.dataIndex;
+            const vA = Number(altasSeries[idx]) || 0;
+            const vC = Number(churnSeries[idx]) || 0;
+            if (vA <= 0 || vC <= 0) return 3;
+            const yA = yScale.getPixelForValue(vA);
+            const yC = yScale.getPixelForValue(vC);
+            if (Math.abs(yA - yC) < 15) {
+                const altasIsHigherOrEqual = (vA >= vC);
+                if (isAltasBar && altasIsHigherOrEqual) return 14;
+                if (!isAltasBar && !altasIsHigherOrEqual) return 14;
+            }
+            return 2;
+        }
 
         let nextObj1 = null;
         const c1El = document.getElementById(c1Id);
@@ -5500,16 +5465,17 @@
                     datasets: [
                         {
                             label: isPerDu ? 'Altas Proj./Real / DU' : 'Altas (Hist / Proj)',
-                            data: [...altasHistDisp, altasAtualDisp],
+                            data: altasSeries,
                             backgroundColor: '#1D4ED8',
                             borderRadius: 3,
-                            barPercentage: 0.85,
-                            categoryPercentage: 0.82,
+                            barPercentage: 0.84,
+                            categoryPercentage: 0.80,
                             datalabels: {
+                                clip: false,
                                 display: true,
                                 anchor: 'end',
                                 align: 'top',
-                                offset: 2,
+                                offset: (ctx) => getSideBySideOffset(ctx, true),
                                 color: '#1E3A8A',
                                 font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", size: 8.2, weight: '700' },
                                 formatter: v => v > 0 ? fmtMetricVal(v, isPerDu) : ''
@@ -5517,16 +5483,17 @@
                         },
                         {
                             label: isPerDu ? 'Churn / DU' : 'Churn (Baixas)',
-                            data: [...churnHistDisp, churnAtualDisp],
+                            data: churnSeries,
                             backgroundColor: '#F43F5E',
                             borderRadius: 3,
-                            barPercentage: 0.85,
-                            categoryPercentage: 0.82,
+                            barPercentage: 0.84,
+                            categoryPercentage: 0.80,
                             datalabels: {
+                                clip: false,
                                 display: true,
                                 anchor: 'end',
                                 align: 'top',
-                                offset: 2,
+                                offset: (ctx) => getSideBySideOffset(ctx, false),
                                 color: '#9F1239',
                                 font: { family: "'Plus Jakarta Sans', 'Inter', sans-serif", size: 8.2, weight: '700' },
                                 formatter: v => v > 0 ? fmtMetricVal(v, isPerDu) : ''
@@ -5538,7 +5505,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     devicePixelRatio: Math.max(window.devicePixelRatio || 1, 2),
-                    layout: { padding: { top: 22, right: 6, left: 4 } },
+                    layout: { padding: { top: 32, right: 8, left: 6 } },
                     plugins: {
                         legend: {
                             position: 'bottom',
@@ -5562,7 +5529,7 @@
         const allNetVals = [...netHistDisp, netProjDisp];
         const minNet = Math.min(...allNetVals, 0);
         const maxNet = Math.max(...allNetVals, 1);
-        const padSpan = Math.max(4, (maxNet - minNet) * 0.24);
+        const padSpan = Math.max(4, (maxNet - minNet) * 0.28);
 
         let nextObj2 = null;
         const c2El = document.getElementById(c2Id);
@@ -5581,6 +5548,7 @@
                             barPercentage: 0.72,
                             categoryPercentage: 0.85,
                             datalabels: {
+                                clip: false,
                                 display: true,
                                 anchor: ctx => ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start',
                                 align: ctx => ctx.dataset.data[ctx.dataIndex] >= 0 ? 'top' : 'bottom',
@@ -5596,7 +5564,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     devicePixelRatio: Math.max(window.devicePixelRatio || 1, 2),
-                    layout: { padding: { top: 24, bottom: 8, right: 6, left: 4 } },
+                    layout: { padding: { top: 28, bottom: 12, right: 8, left: 6 } },
                     plugins: {
                         legend: {
                             position: 'bottom',
@@ -9421,16 +9389,26 @@
                             stack: 'mrr',
                             yAxisID: 'y',
                             datalabels: {
-                                display: ctx => ctx.dataIndex === labelsEvo.length - 1 && projDelta > 0,
+                                clip: false,
+                                display: ctx => ctx.dataIndex === labelsEvo.length - 1 && (curRevDisp + projDelta) > 0,
                                 anchor: 'end',
                                 align: 'top',
-                                offset: 3,
+                                offset: (ctx) => {
+                                    const yS = ctx.chart.scales.y, y1S = ctx.chart.scales.y1;
+                                    if (!yS || !y1S) return 5;
+                                    const yP = yS.getPixelForValue(curRevDisp + projDelta);
+                                    const yL = y1S.getPixelForValue(+curTM.toFixed(2));
+                                    if (curTM > 0 && Math.abs(yL - yP) < 24) {
+                                        return Math.max(5, (yP - Math.min(yP, yL)) + 23);
+                                    }
+                                    return 5;
+                                },
                                 color: '#065F46',
                                 backgroundColor: '#ECFDF5',
                                 borderColor: '#6EE7B7',
                                 borderWidth: 1,
                                 borderRadius: 3,
-                                padding: { top: 1, bottom: 1, left: 3, right: 3 },
+                                padding: { top: 1, bottom: 1, left: 3.5, right: 3.5 },
                                 font: { family: "'Plus Jakarta Sans', sans-serif", size: 8.4, weight: '800' },
                                 formatter: () => 'Proj: R$' + ((curRevDisp + projDelta) >= 1000 ? ((curRevDisp + projDelta) / 1000).toFixed(1).replace('.', ',') + 'k' : fmtInt(curRevDisp + projDelta))
                             }
@@ -9446,13 +9424,16 @@
                             tension: 0.25,
                             yAxisID: 'y1',
                             datalabels: {
+                                clip: false,
                                 display: true,
                                 align: 'top',
                                 offset: 4,
                                 color: '#002A72',
-                                backgroundColor: 'rgba(255,255,255,0.88)',
+                                backgroundColor: 'rgba(255,255,255,0.94)',
+                                borderColor: '#CBD5E1',
+                                borderWidth: 1,
                                 borderRadius: 3,
-                                padding: { top: 0.5, bottom: 0.5, left: 2, right: 2 },
+                                padding: { top: 0.5, bottom: 0.5, left: 2.5, right: 2.5 },
                                 font: { family: "'Plus Jakarta Sans', sans-serif", size: 8.0, weight: '800' },
                                 formatter: v => v > 0 ? ('R$' + v.toFixed(0)) : ''
                             }
@@ -9463,7 +9444,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     devicePixelRatio: Math.max(window.devicePixelRatio || 1, 2),
-                    layout: { padding: { top: 22, bottom: 4, left: 4, right: 6 } },
+                    layout: { padding: { top: 40, bottom: 4, left: 6, right: 16 } },
                     plugins: {
                         legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, padding: 8, font: { size: 9.8, weight: '600' } } }
                     },
@@ -9995,10 +9976,23 @@
                                 stack: 's0',
                                 yAxisID: 'y',
                                 datalabels: {
-                                    display: ctx => ctx.dataIndex === labelsEvo.length - 1 && deltaP > 0,
-                                    anchor: 'end', align: 'top', offset: 3, color: '#002A72',
+                                    clip: false,
+                                    display: ctx => ctx.dataIndex === labelsEvo.length - 1 && projTot > 0,
+                                    anchor: 'end', align: 'top',
+                                    offset: (ctx) => {
+                                        const yS = ctx.chart.scales.y, y1S = ctx.chart.scales.y1;
+                                        if (!yS || !y1S) return 5;
+                                        const yP = yS.getPixelForValue(projTot);
+                                        const yL = y1S.getPixelForValue(+curAttach.toFixed(1));
+                                        // Garante que Proj fique acima de 68% caso a linha passe perto do topo da barra
+                                        if (curAttach > 0 && Math.abs(yL - yP) < 24) {
+                                            return Math.max(5, (yP - Math.min(yP, yL)) + 23);
+                                        }
+                                        return 5;
+                                    },
+                                    color: '#002A72',
                                     backgroundColor: '#FFFFFF', borderColor: '#00A8E8', borderWidth: 1, borderRadius: 3,
-                                    padding: { top: 1, bottom: 1, left: 3, right: 3 },
+                                    padding: { top: 1, bottom: 1, left: 3.5, right: 3.5 },
                                     font: { family: "'Plus Jakarta Sans', sans-serif", size: 8.4, weight: '800' },
                                     formatter: () => 'Proj: ' + fmtMetricVal(projTot, isPerDu)
                                 }
@@ -10014,10 +10008,25 @@
                                 tension: 0.25,
                                 yAxisID: 'y1',
                                 datalabels: {
-                                    display: true, align: 'top', offset: 3, color: '#065F46',
-                                    backgroundColor: 'rgba(236,253,245,0.9)', borderRadius: 3,
-                                    padding: { top: 0.5, bottom: 0.5, left: 2, right: 2 },
-                                    font: { family: "'Plus Jakarta Sans', sans-serif", size: 7.8, weight: '800' },
+                                    clip: false,
+                                    display: true, align: 'top',
+                                    offset: (ctx) => {
+                                        const yS = ctx.chart.scales.y, y1S = ctx.chart.scales.y1;
+                                        if (!yS || !y1S) return 4;
+                                        const idx = ctx.dataIndex;
+                                        const barVal = idx === labelsEvo.length - 1 ? projTot : (histDisp[idx] || 0);
+                                        const lineVal = Number(ctx.dataset.data[idx]) || 0;
+                                        const yB = yS.getPixelForValue(barVal);
+                                        const yL = y1S.getPixelForValue(lineVal);
+                                        if (idx < labelsEvo.length - 1 && barVal > 0 && yL > yB - 4 && yL < yB + 16) {
+                                            return (yL - yB) + 5;
+                                        }
+                                        return 4;
+                                    },
+                                    color: '#065F46',
+                                    backgroundColor: 'rgba(236,253,245,0.95)', borderColor: '#A7F3D0', borderWidth: 1, borderRadius: 3,
+                                    padding: { top: 0.5, bottom: 0.5, left: 2.5, right: 2.5 },
+                                    font: { family: "'Plus Jakarta Sans', sans-serif", size: 7.9, weight: '800' },
                                     formatter: v => v > 0 ? (v.toFixed(0) + '%') : ''
                                 }
                             }
@@ -10026,12 +10035,12 @@
                     options: {
                         responsive: true, maintainAspectRatio: false,
                         devicePixelRatio: Math.max(window.devicePixelRatio || 1, 2),
-                        layout: { padding: { top: 22, bottom: 4, left: 4, right: 6 } },
+                        layout: { padding: { top: 40, bottom: 4, left: 6, right: 16 } },
                         plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, padding: 8, font: { size: 9.6, weight: '600' } } } },
                         scales: {
                             x: { stacked: true, grid: { display: false }, ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", size: 9.2, weight: '700' } } },
-                            y: { stacked: true, display: false, min: 0, max: +(maxY * 1.34).toFixed(2) },
-                            y1: { display: false, min: 0, max: Math.max(150, ...attachArr, curAttach) * 1.35 }
+                            y: { stacked: true, display: false, min: 0, max: +(maxY * 1.42).toFixed(2) },
+                            y1: { display: false, min: 0, max: Math.max(150, ...attachArr, curAttach) * 1.32 }
                         }
                     }
                 });
